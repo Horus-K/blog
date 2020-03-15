@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="架构图">
+<meta property="og:type" content="article">
+<meta property="og:title" content="keepalived架构实验">
+<meta property="og:url" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="架构图">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-19.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-28.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-27.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-20.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-25.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-26.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-23.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-21.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-22.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-24.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-29.png">
+<meta property="article:published_time" content="2020-03-09T13:02:42.000Z">
+<meta property="article:modified_time" content="2020-03-10T10:22:35.772Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="haproxy">
+<meta property="article:tag" content="keeplived">
+<meta property="article:tag" content="wordpress">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-19.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>keepalived架构实验 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          keepalived架构实验
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-09 21:02:42" itemprop="dateCreated datePublished" datetime="2020-03-09T21:02:42+08:00">2020-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 18:22:35" itemprop="dateModified" datetime="2020-03-10T18:22:35+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%AB%98%E5%8F%AF%E7%94%A8/" itemprop="url" rel="index">
+                    <span itemprop="name">高可用</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-19.png" alt="img">架构图</p>
+<a id="more"></a>
+
+<h2 id="110配置"><a href="#110配置" class="headerlink" title="110配置"></a>110配置</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">yum install keepalived haproxy</span><br><span class="line">vim /etc/keepalived/keepalived.conf</span><br><span class="line">vrrp_iptables #开启</span><br><span class="line">vrrp_instance VIP1 &#123;</span><br><span class="line">    state BACKUP</span><br><span class="line">   <span class="built_in"> interface </span>eth0</span><br><span class="line">    virtual_router_id 1</span><br><span class="line">    priority 80</span><br><span class="line">    advert_int 3</span><br><span class="line">    unicast_src_ip 192.168.64.110</span><br><span class="line">        unicast_peer &#123;</span><br><span class="line">            192.168.64.120</span><br><span class="line">        &#125;</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass linux</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.64.200/24 dev eth0 label eth0:0</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">systemctl start keepalived</span><br><span class="line">yum install haproxy</span><br><span class="line">vim /etc/haproxy/haproxy.cfg</span><br><span class="line"></span><br><span class="line">listen WEB_PORT_80</span><br><span class="line">        bind 192.168.64.200:80</span><br><span class="line">        mode http</span><br><span class="line">        balance roundrobin</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.64.130:80 weight 2 check<span class="built_in"> port </span>80 inter 3s fall 3 rise 5</span><br><span class="line">       <span class="built_in"> server </span>web2 192.168.64.140:80 weight 1 check<span class="built_in"> port </span>80 inter 3s fall 3 rise 5</span><br><span class="line">listen MYSQL_PORT_3306</span><br><span class="line">        bind 192.168.64.200:3306</span><br><span class="line">        mode http</span><br><span class="line">        balance roundrobin</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.64.150:3306 weight 1 check<span class="built_in"> port </span>3306 inter 3s fall 3 rise 5</span><br><span class="line"></span><br><span class="line">systemctl start haproxy</span><br></pre></td></tr></table></figure>
+
+<h2 id="120配置"><a href="#120配置" class="headerlink" title="120配置"></a>120配置</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">yum install keepalived haproxy</span><br><span class="line">vim /etc/keepalived/keepalived.conf</span><br><span class="line">vrrp_iptables #开启</span><br><span class="line">vrrp_instance VIP1 &#123;</span><br><span class="line">    state BACKUP</span><br><span class="line">   <span class="built_in"> interface </span>eth0</span><br><span class="line">    virtual_router_id 1</span><br><span class="line">    priority 80</span><br><span class="line">    advert_int 3</span><br><span class="line">    unicast_src_ip 192.168.64.120</span><br><span class="line">        unicast_peer &#123;</span><br><span class="line">            192.168.64.110</span><br><span class="line">        &#125;</span><br><span class="line">    authentication &#123;</span><br><span class="line">        auth_type PASS</span><br><span class="line">        auth_pass linux</span><br><span class="line">    &#125;</span><br><span class="line">    virtual_ipaddress &#123;</span><br><span class="line">        192.168.64.200/24 dev eth0 label eth0:0</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">yum install haproxy</span><br><span class="line">vim /etc/haproxy/haproxy.cfg</span><br><span class="line"></span><br><span class="line">listen WEB_PORT_80</span><br><span class="line">        bind 192.168.64.200:80</span><br><span class="line">        mode http</span><br><span class="line">        balance roundrobin</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.64.130:80 weight 2 check<span class="built_in"> port </span>80 inter 3s fall 3 rise 5</span><br><span class="line">       <span class="built_in"> server </span>web2 192.168.64.140:80 weight 1 check<span class="built_in"> port </span>80 inter 3s fall 3 rise 5</span><br><span class="line">listen MYSQL_PORT_3306</span><br><span class="line">        bind 192.168.64.200:3306</span><br><span class="line">        mode http</span><br><span class="line">        balance roundrobin</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.64.150:3306 weight 1 check<span class="built_in"> port </span>3306 inter 3s fall 3 rise 5</span><br><span class="line"></span><br><span class="line">systemctl start haproxy</span><br></pre></td></tr></table></figure>
+
+<h2 id="150配置"><a href="#150配置" class="headerlink" title="150配置"></a>150配置</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">yy mariadb mariadb-serverv nfs-utils</span><br><span class="line">systemctl <span class="keyword">start</span> mariadb.service</span><br><span class="line"><span class="keyword">grant</span> <span class="keyword">all</span> <span class="keyword">on</span> wpdb.* <span class="keyword">to</span> <span class="string">'wpuser'</span>@<span class="string">'192.168.64.%'</span> <span class="keyword">identified</span> <span class="keyword">by</span> <span class="string">'wordpress'</span></span><br><span class="line">mkdir /<span class="keyword">data</span>/nginx</span><br><span class="line"></span><br><span class="line">vim /etc/exports</span><br><span class="line">/<span class="keyword">data</span>/nginx <span class="number">192.168</span><span class="number">.64</span><span class="number">.0</span>/<span class="number">24</span>(rw,<span class="keyword">sync</span>)</span><br><span class="line"></span><br><span class="line">useradd nginx -s /sbin/nologin -u <span class="number">2000</span></span><br><span class="line">chown nginx:nginx /<span class="keyword">data</span>/nginx/ -R</span><br><span class="line">systemctl <span class="keyword">start</span> nfs</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-28.png" alt="img"></p>
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-27.png" alt="img"></p>
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-20.png" alt="img"></p>
+<p>wordpress配置</p>
+<figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">cd</span> <span class="string">/data/nginx</span></span><br><span class="line"><span class="attr">tar</span> <span class="string">xf wordpress-5.0.3-zh_CN.tar.gz</span></span><br><span class="line"><span class="attr">mv</span> <span class="string">wordpress/* .</span></span><br><span class="line"><span class="attr">rm</span> <span class="string">wordpress/ -rf</span></span><br><span class="line"><span class="attr">cp</span> <span class="string">wp-config-sample.php wp-config.php</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-25.png" alt="img"></p>
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-26.png" alt="img"></p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">define</span></span>(<span class="string">'AUTH_KEY'</span>,         <span class="string">'--M0bn,;,lc]O8KI+9l mS&gt;U*g[&#123;Sx/KxM-+g|X^?RgkOo&#125;|*&#123;S;*X$qw*,.yyva'</span>);</span><br><span class="line"><span class="class"><span class="keyword">define</span></span>(<span class="string">'SECURE_AUTH_KEY'</span>,  <span class="string">'!YDPc(n_UVfz)q5Vo3&#123;g,vm $aB=-LLTeM.tOdpYtN+nTw!NKzC77w,xW92T;B`.'</span>);</span><br><span class="line"><span class="class"><span class="keyword">define</span></span>(<span class="string">'LOGGED_IN_KEY'</span>,    <span class="string">'*&amp;J.n^q8o4H/F ff;5PA!E7y1k1Y=Lt:KK+7Z2jvW*5xXr ==c-K^t&amp;)jmm5CsQ;'</span>);</span><br><span class="line"><span class="class"><span class="keyword">define</span></span>(<span class="string">'NONCE_KEY'</span>,        <span class="string">'019noHvOs#&#123;I;k?%q&amp;,.n0DzUWfrOV&#125;d^-bvt*HljD[KCB!='</span>);</span><br><span class="line"><span class="class"><span class="keyword">define</span></span>(<span class="string">'SECURE_AUTH_SALT'</span>, <span class="string">'HuCEXpJ|yZVJK$is&gt;PF#XdH&#125;ap+Tie ?$OGL&#125;T+H)*a U5-;%Y/t(!mk$2^`E '</span>);</span><br><span class="line"><span class="class"><span class="keyword">define</span></span>(<span class="string">'LOGGED_IN_SALT'</span>,   <span class="string">'^N&amp;N1LM/&gt;tXsF4KF.2dq9Q8&lt;%&gt;Q`H37-sS^mvMP$svxL|+B?63+SgT(nucvr(cE5'</span>);</span><br><span class="line"><span class="class"><span class="keyword">define</span></span>(<span class="string">'NONCE_SALT'</span>,       <span class="string">'&#123;pg)o-f+yskq#:F])/]G#QMN|8o&#125;S@?b37hA0u-bI)|Ngi(I];6&#123;/kJd|&amp;~xM/'</span>);</span><br></pre></td></tr></table></figure>
+
+<h2 id="130配置"><a href="#130配置" class="headerlink" title="130配置"></a>130配置</h2><p>一键安装Nginx</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">cat</span> &gt; onenginx.<span class="keyword">sh</span> &lt; /etc/<span class="keyword">profile</span>.d/nginx.<span class="keyword">sh</span></span><br><span class="line">sed -i <span class="string">"s@\/scripts$fastcgi_script_name@$document_root$fastcgi_script_name@g"</span> /apps/nginx/<span class="keyword">conf</span>/nginx.<span class="keyword">conf</span></span><br><span class="line">/apps/nginx/sbin/nginx -V</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>一键安装PHP</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; onephp.sh &lt;&lt; EOF</span><br><span class="line">yum  install -y  wget vim pcre pcre-devel openssl openssl-devel libicu-devel gcc gcc-c++ autoconf libjpeg libjpeg-devel libpng libpng-devel freetype freetype-devel libxml2 libxml2-devel zlib zlib-devel glibc glibc-devel glib2 glib2-devel ncurses ncurses-devel curl curl-devel krb5-devel libidn libidn-devel openldap openldap-devel nss_ldap jemalloc-devel cmake boost-devel bison automake libevent libevent-devel gd gd-devel libtool* libmcrypt libmcrypt-devel mcrypt mhash libxslt libxslt-devel readline readline-devel gmp gmp-devel libcurl libcurl-devel openjpeg-devel</span><br><span class="line"><span class="keyword">cd</span> <span class="string">/root</span></span><br><span class="line"><span class="comment">#wget https://www.php.net/distributions/php-7.2.19.tar.xz</span></span><br><span class="line">tar xf php-7.1.30.tar.gz</span><br><span class="line"><span class="keyword">cd</span> php-7.1.30/</span><br><span class="line"><span class="string">./configure</span> <span class="params">--prefix=/apps/php</span> <span class="params">--enable-fpm</span> <span class="params">--with-fpm-user=www</span> <span class="params">--with-fpm-group=www</span> <span class="params">--with-pear</span> <span class="params">--with-curl</span> <span class="params">--with-png-dir</span> <span class="params">--with-freetype-dir</span> <span class="params">--with-iconv</span> <span class="params">--with-mhash</span> <span class="params">--with-zlib</span> <span class="params">--with-xmlrpc</span> <span class="params">--with-xsl</span> <span class="params">--with-openssl</span> <span class="params">--with-mysqli</span> <span class="params">--with-pdo-mysql</span> <span class="params">--disable-debug</span> <span class="params">--enable-zip</span> <span class="params">--enable-sockets</span> <span class="params">--enable-soap</span> <span class="params">--enable-inline-optimization</span> <span class="params">--enable-xml</span> <span class="params">--enable-ftp</span> <span class="params">--enable-exif</span> <span class="params">--enable-wddx</span> <span class="params">--enable-bcmath</span> <span class="params">--enable-calendar</span> <span class="params">--enable-shmop</span> <span class="params">--enable-dba</span> <span class="params">--enable-sysvsem</span> <span class="params">--enable-sysvshm</span> <span class="params">--enable-sysvmsg</span></span><br><span class="line">make -j 4 &amp;&amp; make install</span><br><span class="line"><span class="keyword">cd</span> <span class="string">/apps/php/etc/php-fpm.d/</span></span><br><span class="line">cp www.conf.default www.conf</span><br><span class="line">sed -i <span class="string">"s/= www/= nginx/"</span> www.conf</span><br><span class="line"><span class="keyword">cd</span> <span class="string">/apps/php/etc/</span></span><br><span class="line">cp php-fpm.conf.default php-fpm.conf</span><br><span class="line"><span class="string">/apps/php/sbin/php-fpm</span> -t</span><br><span class="line">useradd nginx -s <span class="string">/sbin/nologin</span> -u 2000</span><br><span class="line"><span class="string">/apps/php/sbin/php-fpm</span> -c <span class="string">/apps/php/etc/php.ini</span></span><br><span class="line">ps -ef | grep php-fpm</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>挂载nfs</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install -y nfs-utils</span><br><span class="line">showmount -e <span class="number">192.168</span><span class="number">.64</span><span class="number">.150</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-23.png" alt="img"></p>
+<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mount -t nfs <span class="number">192.168</span>.<span class="number">64.150</span><span class="symbol">:/data/nginx</span> /apps/nginx/html/</span><br></pre></td></tr></table></figure>
+
+<p>准备php测试页面</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">cat &gt; <span class="regexp">/apps/</span>nginx<span class="regexp">/html/i</span>ndex.php &lt;&lt; EOF</span><br><span class="line"></span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">vim <span class="regexp">/apps/</span>nginx<span class="regexp">/conf/</span>nginx.conf</span><br><span class="line"><span class="variable">$document_root</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-21.png" alt="img"></p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="attribute">nginx</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-22.png" alt="img"></p>
+<h2 id="140同130"><a href="#140同130" class="headerlink" title="140同130"></a>140同130</h2><p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-24.png" alt="img"></p>
+<p>页面配置</p>
+<p><img src="/2020/03/09/ha+kp/keepalived%E6%9E%B6%E6%9E%84%E5%AE%9E%E9%AA%8C/image-29.png" alt="img"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/haproxy/" <i class="fa fa-tag"></i>haproxy</a>
+              <a href="/tags/keeplived/" <i class="fa fa-tag"></i>keeplived</a>
+              <a href="/tags/wordpress/" <i class="fa fa-tag"></i>wordpress</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/09/Nginx/%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85Nginx/" rel="prev" title="一键安装Nginx">
+      <i class="fa fa-chevron-left"></i> 一键安装Nginx
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/09/k8s/k8s-yaml-tomcat/" rel="next" title="k8s-yaml-tomcat">
+      k8s-yaml-tomcat <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#110配置"><span class="nav-number">1.</span> <span class="nav-text">110配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#120配置"><span class="nav-number">2.</span> <span class="nav-text">120配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#150配置"><span class="nav-number">3.</span> <span class="nav-text">150配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#130配置"><span class="nav-number">4.</span> <span class="nav-text">130配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#140同130"><span class="nav-number">5.</span> <span class="nav-text">140同130</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

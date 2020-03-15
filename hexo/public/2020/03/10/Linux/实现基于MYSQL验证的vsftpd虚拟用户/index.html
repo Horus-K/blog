@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="环境：两台主机，一台ftp 服务器， 一台mysql server">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实现基于MYSQL验证的vsftpd虚拟用户">
+<meta property="og:url" content="http://yoursite.com/2020/03/10/Linux/%E5%AE%9E%E7%8E%B0%E5%9F%BA%E4%BA%8EMYSQL%E9%AA%8C%E8%AF%81%E7%9A%84vsftpd%E8%99%9A%E6%8B%9F%E7%94%A8%E6%88%B7/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="环境：两台主机，一台ftp 服务器， 一台mysql server">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/Linux/%E5%AE%9E%E7%8E%B0%E5%9F%BA%E4%BA%8EMYSQL%E9%AA%8C%E8%AF%81%E7%9A%84vsftpd%E8%99%9A%E6%8B%9F%E7%94%A8%E6%88%B7/612bf9afdd352896441e336a663b868e.png">
+<meta property="article:published_time" content="2020-03-10T06:32:53.000Z">
+<meta property="article:modified_time" content="2020-03-10T09:45:59.936Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="ftp">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/10/Linux/%E5%AE%9E%E7%8E%B0%E5%9F%BA%E4%BA%8EMYSQL%E9%AA%8C%E8%AF%81%E7%9A%84vsftpd%E8%99%9A%E6%8B%9F%E7%94%A8%E6%88%B7/612bf9afdd352896441e336a663b868e.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/10/Linux/%E5%AE%9E%E7%8E%B0%E5%9F%BA%E4%BA%8EMYSQL%E9%AA%8C%E8%AF%81%E7%9A%84vsftpd%E8%99%9A%E6%8B%9F%E7%94%A8%E6%88%B7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>实现基于MYSQL验证的vsftpd虚拟用户 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/10/Linux/%E5%AE%9E%E7%8E%B0%E5%9F%BA%E4%BA%8EMYSQL%E9%AA%8C%E8%AF%81%E7%9A%84vsftpd%E8%99%9A%E6%8B%9F%E7%94%A8%E6%88%B7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          实现基于MYSQL验证的vsftpd虚拟用户
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-03-10 14:32:53 / 修改时间：17:45:59" itemprop="dateCreated datePublished" datetime="2020-03-10T14:32:53+08:00">2020-03-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%98%E5%82%A8/" itemprop="url" rel="index">
+                    <span itemprop="name">存储</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="环境："><a href="#环境：" class="headerlink" title="环境："></a>环境：</h3><p>两台主机，一台ftp 服务器， 一台mysql server</p>
+<a id="more"></a>
+
+<hr>
+<p><strong>mysql服务器：</strong><br>* yum源</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[root@localhost ~]</span><span class="comment">#vim /etc/yum.repos.d/mariadb.repo </span></span><br><span class="line"><span class="section">[mariadb]</span></span><br><span class="line"><span class="attr">name</span> = MariaDB</span><br><span class="line"><span class="attr">baseurl</span> = https://mirrors.ustc.edu.cn/mariadb/yum/<span class="number">10.2</span>/centos7-amd64/</span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>安装与数据库建立表</li>
+</ul>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]# yum clean <span class="keyword">all</span></span><br><span class="line">[root@localhost ~]# yum install -y mariadb mariadb-<span class="keyword">server</span></span><br><span class="line">[root@localhost ~]# systemctl <span class="keyword">start</span> mariadb</span><br><span class="line">[root@localhost ~]# mysql</span><br><span class="line">MariaDB [(<span class="keyword">none</span>)]&gt; use vsftpd</span><br><span class="line"><span class="keyword">Database</span> changed</span><br><span class="line"></span><br><span class="line">MariaDB [vsftpd]&gt; <span class="keyword">create</span> <span class="keyword">table</span> vuser (id <span class="type">int</span> auto_increment <span class="keyword">primary key</span>,username <span class="type">char</span>(<span class="number">30</span>),<span class="keyword">password</span> <span class="type">char</span>(<span class="number">50</span>) binary);</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.05</span> sec)</span><br><span class="line"></span><br><span class="line">MariaDB [vsftpd]&gt; <span class="keyword">insert</span> vuser(username,<span class="keyword">password</span>)<span class="keyword">values</span>(<span class="string">'ftp1'</span>,<span class="keyword">password</span>(<span class="string">'centos'</span>)),(<span class="string">'ftp2'</span>,<span class="keyword">password</span>(<span class="string">'magedu'</span>));</span><br><span class="line">Query OK, <span class="number">2</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line">Records: <span class="number">2</span>  Duplicates: <span class="number">0</span>  Warnings: <span class="number">0</span></span><br><span class="line"></span><br><span class="line">MariaDB [vsftpd]&gt; <span class="keyword">grant</span> <span class="keyword">select</span> <span class="keyword">on</span> vsftpd.vuser <span class="keyword">to</span> vsftpd@<span class="string">'192.168.64.%'</span> identified <span class="keyword">by</span> <span class="string">'centos'</span>;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.01</span> sec)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/10/Linux/%E5%AE%9E%E7%8E%B0%E5%9F%BA%E4%BA%8EMYSQL%E9%AA%8C%E8%AF%81%E7%9A%84vsftpd%E8%99%9A%E6%8B%9F%E7%94%A8%E6%88%B7/612bf9afdd352896441e336a663b868e.png" alt="img"></p>
+<hr>
+<p><strong>ftp服务器:</strong><br>* 1编译安装pam_mysql.so</p>
+<blockquote>
+<p>下载地址：<a href="http://prdownloads.sourceforge.net/pam-mysql/pam_mysql-0.7RC1.tar.gz" target="_blank" rel="noopener">http://prdownloads.sourceforge.net/pam-mysql/pam_mysql-0.7RC1.tar.gz</a></p>
+</blockquote>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">[<span class="symbol">root@</span>localhost ~]# yum install gcc gcc-c++ pam-devel mariadb-devel</span><br><span class="line">[<span class="symbol">root@</span>localhost ~]# tar xf pam_mysql<span class="number">-0.7</span>RC1.tar.gz </span><br><span class="line">[<span class="symbol">root@</span>localhost ~/pam_mysql<span class="number">-0.7</span>RC1]# cd pam_mysql<span class="number">-0.7</span>RC1/</span><br><span class="line">[<span class="symbol">root@</span>localhost ~/pam_mysql<span class="number">-0.7</span>RC1]# ./configure  --with-pam-mods-dir=/lib64/security </span><br><span class="line">[<span class="symbol">root@</span>localhost ~/pam_mysql<span class="number">-0.7</span>RC1]#echo $?</span><br><span class="line"><span class="number">0</span></span><br><span class="line">[<span class="symbol">root@</span>localhost ~/pam_mysql<span class="number">-0.7</span>RC1]# make &amp;&amp; make install</span><br><span class="line">[<span class="symbol">root@</span>localhost ~/pam_mysql<span class="number">-0.7</span>RC1]#echo $?</span><br><span class="line"><span class="number">0</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>2 创建pam配置文件</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]# vim  /etc/pam.d/vsftpd.mysql </span><br><span class="line">auth required pam_mysql.so <span class="attribute">user</span>=vsftpd <span class="attribute">passwd</span>=centos <span class="attribute">host</span>=192.168.36.17  <span class="attribute">db</span>=vsftpd <span class="attribute">table</span>=vuser <span class="attribute">usercolumn</span>=username <span class="attribute">passwdcolumn</span>=password <span class="attribute">crypt</span>=2</span><br><span class="line">account required pam_mysql.so <span class="attribute">user</span>=vsftpd <span class="attribute">passwd</span>=centos <span class="attribute">host</span>=192.168.36.17 <span class="attribute">db</span>=vsftpd <span class="attribute">table</span>=vuser <span class="attribute">usercolumn</span>=username <span class="attribute">passwdcolumn</span>=password <span class="attribute">crypt</span>=2</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>3 修改vsftpd配置，调用pam配置</li>
+</ul>
+<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">[root<span class="variable">@localhost</span> ~]<span class="comment"># yum install vsftpd</span></span><br><span class="line">[root<span class="variable">@localhost</span> ~]<span class="comment"># vim /etc/vsftpd/vsftpd.conf</span></span><br><span class="line">pam_service_name=vsftpd.mysql     修改此行   </span><br><span class="line">加下面三行                                                                                 </span><br><span class="line">guest_enable=YES</span><br><span class="line">guest_username=vuser</span><br><span class="line">user_config_dir=<span class="regexp">/etc/vsftpd</span><span class="regexp">/vusers.d/</span></span><br><span class="line">[root<span class="variable">@localhost</span> ~]<span class="comment"># mkdir /etc/vsftpd/vusers.d/</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>4 创建系统用户</li>
+</ul>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="title">useradd</span> -r -s /sbin/nologin -d /<span class="class"><span class="keyword">data</span>/ftproot vuser</span></span><br><span class="line"><span class="title">mkdir</span> /<span class="class"><span class="keyword">data</span>/ftproot</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>5 各个虚拟用户不同的ftp配置</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">[root@localhost ~]# vim  /etc/vsftpd/vusers.d/ftp1 </span><br><span class="line"><span class="attribute">anon_upload_enable</span>=<span class="literal">YES</span></span><br><span class="line"><span class="attribute">anon_mkdir_write_enable</span>=<span class="literal">YES</span></span><br><span class="line"><span class="attribute">anon_other_write_enable</span>=<span class="literal">YES</span></span><br><span class="line"><span class="attribute">local_root</span>=/data/ftp1</span><br><span class="line"></span><br><span class="line">vim /etc/vsftpd/vusers.d/ftp2</span><br><span class="line"><span class="attribute">anon_upload_enable</span>=<span class="literal">YES</span></span><br><span class="line"><span class="attribute">anon_mkdir_write_enable</span>=<span class="literal">YES</span></span><br><span class="line"><span class="attribute">anon_other_write_enable</span>=<span class="literal">YES</span></span><br><span class="line"><span class="attribute">local_root</span>=/data/ftp2</span><br><span class="line"></span><br><span class="line">[root@localhost ~]# mkdir /data/ftp&#123;1,2&#125; -pv</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>6禁止匿名用户登录</li>
+</ul>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">[root@localhost ~]</span><span class="comment"># vim /etc/vsftpd/vsftpd.conf</span></span><br><span class="line"><span class="attr">anonymous_enable</span>=<span class="literal">NO</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>7测试</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/ftp/" <i class="fa fa-tag"></i>ftp</a>
+              <a href="/tags/mysql/" <i class="fa fa-tag"></i>mysql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/ansible%E2%80%93playbook%E7%94%A8%E6%B3%95%E4%B8%8E%E8%87%AA%E5%B7%B1%E7%9A%84yml%E8%8C%83%E4%BE%8B%E6%80%BB%E7%BB%93/" rel="prev" title="ansible–playbook用法与自己的yml范例总结">
+      <i class="fa fa-chevron-left"></i> ansible–playbook用法与自己的yml范例总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/10/Linux/HTTP%E7%8A%B6%E6%80%81%E7%A0%81/" rel="next" title="HTTP状态码">
+      HTTP状态码 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#环境："><span class="nav-number">1.</span> <span class="nav-text">环境：</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

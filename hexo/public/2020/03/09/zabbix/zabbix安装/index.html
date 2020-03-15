@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="ubuntu apt安装zabbix">
+<meta property="og:type" content="article">
+<meta property="og:title" content="zabbix安装">
+<meta property="og:url" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="ubuntu apt安装zabbix">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190713100952.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190713102907.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712234141.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712234343.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235122.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235312.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235421.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235703.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235821.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190713000226.png">
+<meta property="og:image" content="http://www.xingbofine.com/wp-content/uploads/2019/07/QQ%E6%88%AA%E5%9B%BE20190713102907.png">
+<meta property="article:published_time" content="2020-03-09T05:09:18.000Z">
+<meta property="article:modified_time" content="2020-03-10T11:11:47.397Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="Zabbix">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190713100952.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>zabbix安装 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          zabbix安装
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-09 13:09:18" itemprop="dateCreated datePublished" datetime="2020-03-09T13:09:18+08:00">2020-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 19:11:47" itemprop="dateModified" datetime="2020-03-10T19:11:47+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Zabbix/" itemprop="url" rel="index">
+                    <span itemprop="name">Zabbix</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>ubuntu apt安装zabbix</strong></p>
+<a id="more"></a>
+
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span>、安装数据库</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# wget https://repo.zabbix.com/zabbix/<span class="number">4.0</span>/ubuntu/pool/main/z/zabbix-<span class="keyword">release</span>/zabbix-release_4<span class="number">.0</span><span class="number">-2</span>+bionic_all.deb</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# dpkg -i zabbix-release_4<span class="number">.0</span><span class="number">-2</span>+bionic_all.deb</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# apt <span class="keyword">update</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="number">2</span>、安装Zabbix <span class="keyword">server</span>，Web前端，agent</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# apt -y install zabbix-<span class="keyword">server</span>-mysql zabbix-frontend-php zabbix-agent</span><br><span class="line"></span><br><span class="line"><span class="number">3</span>、初始化数据库</span><br><span class="line">MariaDB [(<span class="keyword">none</span>)]&gt; <span class="keyword">create</span> <span class="keyword">database</span> zabbix <span class="type">character</span> <span class="keyword">set</span> utf8 <span class="keyword">collate</span> utf8_bin;</span><br><span class="line">MariaDB [(<span class="keyword">none</span>)]&gt; <span class="keyword">grant</span> <span class="keyword">all</span> <span class="keyword">privileges</span> <span class="keyword">on</span> zabbix.* <span class="keyword">to</span> zabbix@<span class="number">192.168</span><span class="number">.6</span><span class="number">.10</span> identified <span class="keyword">by</span> <span class="string">'123456'</span>;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">修改端口</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# grep <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> /etc/mysql/ -R</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# vim /etc/mysql/mariadb.conf.d/<span class="number">50</span>-<span class="keyword">server</span>.cnf</span><br><span class="line"></span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# systemctl <span class="keyword">restart</span> mariadb</span><br><span class="line"></span><br><span class="line">验证登录</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# mysql -uzabbix -p123456 -h192<span class="number">.168</span><span class="number">.6</span><span class="number">.10</span></span><br><span class="line">导入初始架构和数据，</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# zcat /usr/<span class="keyword">share</span>/doc/zabbix-<span class="keyword">server</span>-mysql*/<span class="keyword">create</span>.<span class="keyword">sql</span>.gz | mysql -uzabbix -p123456 -h192<span class="number">.168</span><span class="number">.6</span><span class="number">.10</span> zabbix</span><br><span class="line"></span><br><span class="line">MariaDB [zabbix]&gt; <span class="keyword">show</span> <span class="keyword">tables</span>;</span><br><span class="line">配置数据库</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# vim /etc/zabbix/zabbix_server.conf</span><br><span class="line">DBHost=<span class="number">192.168</span><span class="number">.6</span><span class="number">.10</span></span><br><span class="line">DBPassword=<span class="number">123456</span></span><br><span class="line"></span><br><span class="line">配置前端PHP</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# vim /etc/zabbix/apache.conf</span><br><span class="line">php_value <span class="type">date</span>.timezone Asia/Shanghai</span><br><span class="line"></span><br><span class="line">启动Zabbix <span class="keyword">server</span>和agent进程，并为它们设置开机自启</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# systemctl <span class="keyword">restart</span> zabbix-<span class="keyword">server</span> zabbix-agent apache2</span><br><span class="line">root@zabbix-<span class="keyword">server</span>:~# systemctl <span class="keyword">enable</span> zabbix-<span class="keyword">server</span> zabbix-agent apache2</span><br><span class="line"></span><br><span class="line">配置zabbix前端</span><br><span class="line">http://<span class="number">192.168</span><span class="number">.6</span><span class="number">.10</span>/zabbix/setup.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190713100952.png" alt="img"></p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">zabbix加入中文语言</span><br><span class="line"></span><br><span class="line">root<span class="symbol">@zabbix</span>-server:~<span class="meta"># find / -name defines.inc.php</span></span><br><span class="line">/usr/share/zabbix/include/defines.inc.php</span><br><span class="line"></span><br><span class="line">root<span class="symbol">@zabbix</span>-server:~<span class="meta"># vim /usr/share/zabbix/<span class="meta-keyword">include</span>/defines.inc.php</span></span><br><span class="line">......</span><br><span class="line">define(<span class="string">'ZBX_GRAPH_FONT_NAME'</span>,        <span class="string">'simkai'</span>)<span class="comment">; // font file name</span></span><br><span class="line">.......</span><br><span class="line"></span><br><span class="line">define(<span class="string">'ZBX_FONT_NAME'</span>, <span class="string">'simkai'</span>)<span class="comment">;</span></span><br><span class="line"></span><br><span class="line">搜索字体存放位置</span><br><span class="line">root<span class="symbol">@zabbix</span>-server:~<span class="meta"># find / -name graphfont*</span></span><br><span class="line">/usr/share/zabbix/assets/fonts/graphfont.ttf</span><br><span class="line"></span><br><span class="line">放入新的字体（下载楷体常规）</span><br><span class="line">root<span class="symbol">@zabbix</span>-server:~<span class="meta"># cp simkai.ttf /usr/share/zabbix/assets/fonts/</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190713102907.png" alt="img"></p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line">========================================================================= </span><br><span class="line">ubuntu编译安装zabbix <span class="number">4.0</span><span class="number">.10</span></span><br><span class="line"></span><br><span class="line">https:<span class="comment">//www.zabbix.com/download_sources#tab:40LTS</span></span><br><span class="line"></span><br><span class="line">zabbix-server:<span class="number">192.168</span><span class="number">.6</span><span class="number">.10</span></span><br><span class="line">zabbix-mysql:<span class="number">192.168</span><span class="number">.6</span><span class="number">.20</span></span><br><span class="line"></span><br><span class="line"><span class="number">1</span>、安装mariadb数据库</span><br><span class="line"><span class="symbol">root@</span>zabbix-mysql:~# apt-<span class="keyword">get</span> install mariadb-server mariadb-client apt-<span class="keyword">get</span>  install  mariadb-server mariadb-client</span><br><span class="line"></span><br><span class="line">建立数据库</span><br><span class="line">MariaDB [(none)]&gt; create database zabbix character <span class="keyword">set</span> utf8 collate utf8_bin;</span><br><span class="line">Query OK, <span class="number">1</span> row affected (<span class="number">0.05</span> sec)</span><br><span class="line"></span><br><span class="line">授权</span><br><span class="line">MariaDB [(none)]&gt; grant all privileges on zabbix.* to <span class="symbol">zabbix@</span><span class="string">"192.168.6.%"</span> identified by <span class="string">'123456'</span>;</span><br><span class="line">Query OK, <span class="number">0</span> rows affected (<span class="number">0.00</span> sec)</span><br><span class="line"></span><br><span class="line">安全加固脚本</span><br><span class="line"><span class="symbol">root@</span>zabbix-mysql:/usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span>/database/mysql# mysql_secure_installation</span><br><span class="line"></span><br><span class="line">修改监听端口</span><br><span class="line"><span class="symbol">root@</span>zabbix-mysql:~# grep <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span> /etc/mysql/ -R</span><br><span class="line">/etc/mysql/mariadb.conf.d/<span class="number">50</span>-server.cnf:bind-address = <span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span></span><br><span class="line"></span><br><span class="line"><span class="symbol">root@</span>zabbix-mysql:~# systemctl restart mariadb</span><br><span class="line"><span class="symbol">root@</span>zabbix-mysql:~# systemctl enable mariadb</span><br><span class="line"></span><br><span class="line">zabbix服务端测试登录数据库</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# mysql -uzabbix -p123456 -h192<span class="number">.168</span><span class="number">.6</span><span class="number">.20</span></span><br><span class="line"><span class="number">2</span>、安装zabbix依赖包</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# apt-<span class="keyword">get</span>  install   apache2 apache2-bin apache2-data apache2-utils fontconfig-config fonts-dejavu-core fping libapache2-mod-php   libapache2-mod-php7<span class="number">.2</span> libapr1 libaprutil1 libaprutil1-dbd-sqlite3 libaprutil1-ldap libfontconfig1 libgd3 libiksemel3   libjbig0 libjpeg-turbo8 libjpeg8 liblua5<span class="number">.2</span><span class="number">-0</span> libodbc1 libopenipmi0 libsensors4 libsnmp-base libsnmp30 libsodium23 libssh2<span class="number">-1</span>  libtiff5 libwebp6 libxpm4 php-bcmath php-common php-gd php-ldap php-mbstring php-mysql php-xml php7<span class="number">.2</span>-bcmath php7<span class="number">.2</span>-cli  php7<span class="number">.2</span>-common php7<span class="number">.2</span>-gd php7<span class="number">.2</span>-json php7<span class="number">.2</span>-ldap php7<span class="number">.2</span>-mbstring php7<span class="number">.2</span>-mysql php7<span class="number">.2</span>-opcache php7<span class="number">.2</span>-readline   php7<span class="number">.2</span>-xml snmpd  ssl-cert ttf-dejavu-core      libmysqlclient-dev  libxml2-dev  libxml2 snmp  libsnmp-dev   libevent-dev  openjdk<span class="number">-8</span>-jdk curl libcurl4-openssl-dev</span><br><span class="line"><span class="number">3</span>、开始编译安装zabbix4<span class="number">.0</span><span class="number">.10</span></span><br><span class="line"></span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# cd /usr/local/src/</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:src# tar xvf zabbix<span class="number">-4.0</span><span class="number">.10</span>.tar.gz </span><br><span class="line"></span><br><span class="line"><span class="symbol">root@</span>zabbix-server:/usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span># ./configure --prefix=/app/zabbix_server  --enable-server --enable-agent --with-mysql  --with-net-snmp --with-libcurl --with-libxml2  --enable-java</span><br><span class="line"></span><br><span class="line"><span class="symbol">root@</span>zabbix-server:/usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span># make &amp;&amp; make install </span><br><span class="line"><span class="number">4</span>、数据库初始化</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# cd /usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span>/database/mysql/</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:/usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span>/database/mysql# mysql -uzabbix -p123456 -h192<span class="number">.168</span><span class="number">.6</span><span class="number">.20</span> zabbix  &lt; schema.sql</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:/usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span>/database/mysql# mysql -uzabbix -p123456 -h192<span class="number">.168</span><span class="number">.6</span><span class="number">.20</span> zabbix  &lt;  images.sql</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:/usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span>/database/mysql# mysql -uzabbix -p123456 -h192<span class="number">.168</span><span class="number">.6</span><span class="number">.20</span> zabbix  &lt;  data.sql </span><br><span class="line"></span><br><span class="line"><span class="number">5</span>、编辑zabbix配置文件</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:/usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span>/database/mysql# vim /app/zabbix_server/etc/zabbix_server.conf</span><br><span class="line">......</span><br><span class="line">DBHost=<span class="number">192.168</span><span class="number">.6</span><span class="number">.20</span></span><br><span class="line"></span><br><span class="line">DBName=zabbix</span><br><span class="line"></span><br><span class="line">DBUser=zabbix</span><br><span class="line">DBPassword=<span class="number">123456</span></span><br><span class="line"></span><br><span class="line"><span class="number">6</span>、创建zbbix用户</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# useradd zabbix</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# chown zabbix.zabbix /app/zabbix_server -R</span><br><span class="line"></span><br><span class="line"><span class="number">7</span>、启动zabbix</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# /app/zabbix_server/sbin/zabbix_server -c /app/zabbix_server/etc/zabbix_server.conf</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# ss -nlt</span><br><span class="line"><span class="number">8</span>、安装zabbix-web界面</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# rm -rf /var/www/html/index.html</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# mkdir /var/www/html/zabbix</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# cp -a /usr/local/src/zabbix<span class="number">-4.0</span><span class="number">.10</span>/frontends/php<span class="comment">/* /var/www/html/zabbix/</span></span><br><span class="line"><span class="comment">root@zabbix-server:~# chown zabbix.zabbix /var/www/html/zabbix -R</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">9、启动apache2</span></span><br><span class="line"><span class="comment">root@zabbix-server:~# systemctl restart apache2</span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">10、安装php依赖包</span></span><br><span class="line"><span class="comment">root@zabbix-server:/usr/local/src/zabbix-4.0.10# apt-get   install php-gettext   php-xml php-net-socket php-gd php-mysql</span></span><br><span class="line"><span class="comment">11、web界面部署zabbix</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712234141.png" alt="img"></p>
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712234343.png" alt="img"></p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">解决报错</span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# find / -name php.ini</span><br><span class="line">/etc/php/<span class="number">7.2</span>/apache2/php.ini</span><br><span class="line"></span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# vim /etc/php/<span class="number">7.2</span>/apache2/php.ini</span><br><span class="line">post_max_size = <span class="number">16</span>M</span><br><span class="line">max_execution_time = <span class="number">300</span></span><br><span class="line">max_input_time = <span class="number">300</span></span><br><span class="line">date.timezone = Asia/Shanghai</span><br><span class="line"></span><br><span class="line"><span class="symbol">root@</span>zabbix-server:~# systemctl restart apache2</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235122.png" alt="img"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">初始化数据库配置</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235312.png" alt="img"></p>
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235421.png" alt="img"></p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">更改权限  <span class="selector-tag">chown</span> <span class="selector-tag">zabbix</span><span class="selector-class">.zabbix</span> <span class="selector-tag">zabbix</span><span class="selector-class">.conf</span><span class="selector-class">.php</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235703.png" alt="img"></p>
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190712235821.png" alt="img"></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">默认账户密码 <span class="keyword">Admin</span> zabbix</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/zabbix/%C2%96zabbix%E5%AE%89%E8%A3%85/QQ%E6%88%AA%E5%9B%BE20190713000226.png" alt="img"></p>
+<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">zabbix选择中文语言需要更改字体</span><br><span class="line"><span class="number">1</span>、</span><br><span class="line">放入新的字体（可以从windows中获取）</span><br><span class="line">root<span class="variable">@zabbix</span>-<span class="symbol">server:</span>~<span class="comment"># cd /var/www/html/zabbix/assets/fonts/</span></span><br><span class="line">simkai.ttf</span><br><span class="line"></span><br><span class="line"><span class="number">2</span>、</span><br><span class="line">/var/www/html/zabbix</span><br><span class="line">root<span class="variable">@zabbix</span>-<span class="symbol">server:</span>zabbix<span class="comment"># vim include/defines.inc.php</span></span><br><span class="line">......</span><br><span class="line">define(<span class="string">'ZBX_GRAPH_FONT_NAME'</span>, <span class="string">'simkai'</span>); <span class="regexp">//</span> font file name       <span class="comment">#69行 </span></span><br><span class="line">.......</span><br><span class="line">define(<span class="string">'ZBX_FONT_NAME'</span>, <span class="string">'simkai'</span>);          <span class="comment">#110行</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">启动zabbix_agentd监控本机</span><br><span class="line">root<span class="variable">@zabbix</span>-<span class="symbol">server:</span>~<span class="comment"># /app/zabbix_server/sbin/zabbix_agentd -c /app/zabbix_server/etc/zabbix_agentd.conf</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="http://www.xingbofine.com/wp-content/uploads/2019/07/QQ%E6%88%AA%E5%9B%BE20190713102907.png" alt="img"></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line">============================================================================</span><br><span class="line">制作启动脚本</span><br><span class="line">zabbix-agent.service  zabbix-server.service</span><br><span class="line"></span><br><span class="line">1、配置文件设定pid路径</span><br><span class="line">root@zabbix-server:~# vim /app/zabbix_server/etc/zabbix_server.conf</span><br><span class="line"><span class="attribute">PidFile</span>=/app/zabbix_server/run/zabbix_server.pid</span><br><span class="line"></span><br><span class="line">2、创建pid目录</span><br><span class="line">root@zabbix-server:~# mkdir /app/zabbix_server/run</span><br><span class="line">root@zabbix-server:~# chown zabbix.zabbix /app/zabbix_server/run</span><br><span class="line"></span><br><span class="line">3、配置zabbix-server脚本</span><br><span class="line">root@zabbix-server:~# vim /lib/systemd/system/zabbix-server.service </span><br><span class="line">[Unit]</span><br><span class="line"><span class="attribute">Description</span>=Zabbix Server</span><br><span class="line"><span class="attribute">After</span>=syslog.target</span><br><span class="line"><span class="attribute">After</span>=network.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line"><span class="attribute">Environment</span>=<span class="string">"CONFFILE=/app/zabbix_server/etc/zabbix_server.conf"</span></span><br><span class="line"><span class="attribute">EnvironmentFile</span>=-/etc/default/zabbix-server</span><br><span class="line"><span class="attribute">Type</span>=forking</span><br><span class="line"><span class="attribute">Restart</span>=on-failure</span><br><span class="line"><span class="attribute">PIDFile</span>=/app/zabbix_server/run/zabbix_server.pid</span><br><span class="line"><span class="attribute">KillMode</span>=control-group</span><br><span class="line"><span class="attribute">ExecStart</span>=/app/zabbix_server/sbin/zabbix_server -c <span class="variable">$CONFFILE</span></span><br><span class="line"><span class="attribute">ExecStop</span>=/bin/kill -SIGTERM <span class="variable">$MAINPID</span></span><br><span class="line"><span class="attribute">RestartSec</span>=10s</span><br><span class="line"><span class="attribute">TimeoutSec</span>=infinity</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line"><span class="attribute">WantedBy</span>=multi-user.target</span><br><span class="line"></span><br><span class="line">4、验证启动、停止</span><br><span class="line">root@zabbix-server:~# systemctl daemon-reload</span><br><span class="line">root@zabbix-server:~# systemctl start zabbix-server.service </span><br><span class="line">root@zabbix-server:~# systemctl stop zabbix-server.service</span><br><span class="line"><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span><span class="built_in">..</span>.</span><br><span class="line">1、配置文件设定pid路径</span><br><span class="line">root@zabbix-server:~# vim /app/zabbix_server/etc/zabbix_agentd.conf</span><br><span class="line"><span class="attribute">PidFile</span>=/app/zabbix_agent/run/zabbix_agentd.pid</span><br><span class="line"></span><br><span class="line">2、创建pid目录</span><br><span class="line">root@zabbix-server:~# mkdir /app/zabbix_agent/run/ -p</span><br><span class="line">root@zabbix-server:~# chown zabbix.zabbix /app/zabbix_agent </span><br><span class="line"></span><br><span class="line">3、配置zabbix-agent.service脚本</span><br><span class="line">root@zabbix-server:~# vim /lib/systemd/system/zabbix-agent.service</span><br><span class="line">[Unit]</span><br><span class="line"><span class="attribute">Description</span>=Zabbix Agent</span><br><span class="line"><span class="attribute">After</span>=syslog.target</span><br><span class="line"><span class="attribute">After</span>=network.target</span><br><span class="line"></span><br><span class="line">[Service]</span><br><span class="line"><span class="attribute">Environment</span>=<span class="string">"CONFFILE=/app/zabbix_server/etc/zabbix_agentd.conf"</span></span><br><span class="line"><span class="attribute">EnvironmentFile</span>=-/etc/default/zabbix-agent</span><br><span class="line"><span class="attribute">Type</span>=forking</span><br><span class="line"><span class="attribute">Restart</span>=on-failure</span><br><span class="line"><span class="attribute">PIDFile</span>=/app/zabbix_agent/run/zabbix_agentd.pid</span><br><span class="line"><span class="attribute">KillMode</span>=control-group</span><br><span class="line"><span class="attribute">ExecStart</span>=/app/zabbix_server/sbin/zabbix_agentd -c <span class="variable">$CONFFILE</span></span><br><span class="line"><span class="attribute">ExecStop</span>=/bin/kill -SIGTERM <span class="variable">$MAINPID</span></span><br><span class="line"><span class="attribute">RestartSec</span>=10s</span><br><span class="line"></span><br><span class="line">[Install]</span><br><span class="line"><span class="attribute">WantedBy</span>=multi-user.target</span><br><span class="line"></span><br><span class="line">4、验证启动、停止</span><br><span class="line">root@zabbix-node1:~# systemctl daemon-reload</span><br><span class="line">root@zabbix-node1:~# systemctl restart zabbix-agent.service </span><br><span class="line">root@zabbix-node1:~# ps -ef | grep zabbix</span><br><span class="line"></span><br><span class="line">配置文件</span><br><span class="line"></span><br><span class="line">root@zabbix-server:~# mkdir /app/zabbix_server/logs</span><br><span class="line">root@zabbix-server:~# chown zabbix.zabbix /app/zabbix_server/logs/</span><br><span class="line"></span><br><span class="line">root@zabbix-server:~# vim /app/zabbix_server/etc/zabbix_server.conf</span><br><span class="line"><span class="attribute">LogFile</span>=/app/zabbix_server/logs/zabbix_server.log     #日志</span><br><span class="line"></span><br><span class="line"><span class="attribute">AllowRoot</span>=0             #0关闭root启动，1开启root启动</span><br><span class="line"><span class="attribute">User</span>=zabbix             #启动zabbix服务的用户</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Zabbix/" <i class="fa fa-tag"></i>Zabbix</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/09/zabbix/Zabbix%E7%9B%91%E6%8E%A7linux%E6%9C%8D%E5%8A%A1%E5%99%A8/" rel="prev" title="Zabbix监控linux服务器">
+      <i class="fa fa-chevron-left"></i> Zabbix监控linux服务器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/09/kvm/%C2%96kvm%E6%9E%B6%E6%9E%84/" rel="next" title="kvm架构">
+      kvm架构 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

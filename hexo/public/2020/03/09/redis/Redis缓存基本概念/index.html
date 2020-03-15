@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="一 ： 缓存 概念 ：缓存是为了调节速度不一致的两个或多个不同的物质的速度，在中间对速度较快的一方起到一个加速访问速度较慢的一方的作用，比如 CPU 的一级、二级缓存是保存了 CPU 最近经常访问的数据，内存是保存 CPU 经常访问硬盘的数据，而且硬盘也有大小不一的缓存，甚至是物理服务器的 raid 卡有也缓存，都是为了起到加速 CPU 访问硬盘数据的目的，因为 CPU 的速度太快了，CPU 需要">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis缓存基本概念">
+<meta property="og:url" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="一 ： 缓存 概念 ：缓存是为了调节速度不一致的两个或多个不同的物质的速度，在中间对速度较快的一方起到一个加速访问速度较慢的一方的作用，比如 CPU 的一级、二级缓存是保存了 CPU 最近经常访问的数据，内存是保存 CPU 经常访问硬盘的数据，而且硬盘也有大小不一的缓存，甚至是物理服务器的 raid 卡有也缓存，都是为了起到加速 CPU 访问硬盘数据的目的，因为 CPU 的速度太快了，CPU 需要">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-30-1024x575.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-31.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-32.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-33.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-34.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-35.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-36.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-37.png">
+<meta property="article:published_time" content="2020-03-09T12:01:12.000Z">
+<meta property="article:modified_time" content="2020-03-10T10:27:35.604Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="理论">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-30-1024x575.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Redis缓存基本概念 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis缓存基本概念
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-09 20:01:12" itemprop="dateCreated datePublished" datetime="2020-03-09T20:01:12+08:00">2020-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 18:27:35" itemprop="dateModified" datetime="2020-03-10T18:27:35+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index">
+                    <span itemprop="name">redis</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="一-：-缓存-概念-："><a href="#一-：-缓存-概念-：" class="headerlink" title="一 ： 缓存 概念 ："></a>一 ： 缓存 概念 ：</h2><p>缓存是为了调节速度不一致的两个或多个不同的物质的速度，在中间对速度较快的一方起到一个加<br>速访问速度较慢的一方的作用，比如 CPU 的一级、二级缓存是保存了 CPU 最近经常访问的数据，内存是保存 CPU 经常访问硬盘的数据，而且硬盘也有大小不一的缓存，甚至是物理服务器的 raid 卡有也缓存，都是为了起到加速 CPU 访问硬盘数据的目的，因为 CPU 的速度太快了，CPU 需要的数据硬盘往往不能在短时间内满足 CPU 的需求，因此 PCU 缓存、内存、Raid 卡以及硬盘缓存就在一定程度上满足了 CPU 的数据需求，即 CPU 从缓存读取数据可以大幅提高 CPU 的工作效率。</p>
+<a id="more"></a>
+
+<p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-30-1024x575.png" alt="img"></p>
+<h2 id="1-1-：-系统缓存"><a href="#1-1-：-系统缓存" class="headerlink" title="1 .1 ： 系统缓存"></a>1 .1 ： 系统缓存</h2><h3 id="1-1-1：buffer-与-cache："><a href="#1-1-1：buffer-与-cache：" class="headerlink" title="1.1.1：buffer 与 cache："></a>1.1.1：buffer 与 cache：</h3><p>buffer：缓冲也叫写缓冲，一般用于写操作，可以将数据先写入内存在写入磁盘，buffer 一般用于写缓冲，用于解决不同介质的速度不一致的缓冲，先将数据临时写入到里自己最近的地方，以提高写入速度，CPU 会把数据线写到内存的磁盘缓冲区，然后就认为数据已经写入完成看，然后内核的线程在后面的时间在写入磁盘，所以服务器突然断电会丢失内存中的部分数据。<br>cache：缓存也叫读缓存，一般用于读操作，CPU 读文件从内存读，如果内存没有就先从硬盘读到内存再读到 CPU，将需要频繁读取的数据放在里自己最近的缓存区域，下次读取的时候即可快速读取。</p>
+<h3 id="1-1-2：cache-的保存位置："><a href="#1-1-2：cache-的保存位置：" class="headerlink" title="1.1.2：cache 的保存位置："></a>1.1.2：cache 的保存位置：</h3><p>客户端：浏览器<br>内存：本地服务器、远程服务器<br>硬盘：本机硬盘、远程服务器硬盘</p>
+<h3 id="1-1-3：cache-的特性："><a href="#1-1-3：cache-的特性：" class="headerlink" title="1.1.3：cache 的特性："></a>1.1.3：cache 的特性：</h3><p>自动过期：给缓存的数据加上有效时间，超出时间后自动过期删除<br>过期时间：强制过期，源网站更新图片后 CDN 是不会更新的，需要强制是图片缓存过期<br>命中率：即缓存的读取命中率</p>
+<h2 id="1-2-：-用户层缓存："><a href="#1-2-：-用户层缓存：" class="headerlink" title="1.2 ： 用户层缓存："></a>1.2 ： 用户层缓存：</h2><h3 id="1-2-1：DNS-缓存："><a href="#1-2-1：DNS-缓存：" class="headerlink" title="1.2.1：DNS 缓存："></a>1.2.1：DNS 缓存：</h3><p>默认为 60 秒，即 60 秒之内在访问同一个域名就不在进行 DNS 解析：<br>查看 chrome 浏览器的 DNS 缓存：<br>chrome://net-internals/#dns</p>
+<p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-31.png" alt="img"></p>
+<h3 id="1-2-2：火狐浏览器缓存："><a href="#1-2-2：火狐浏览器缓存：" class="headerlink" title="1.2.2：火狐浏览器缓存："></a>1.2.2：火狐浏览器缓存：</h3><p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-32.png" alt="img"></p>
+<h3 id="1-2-3：浏览器缓存过期机制："><a href="#1-2-3：浏览器缓存过期机制：" class="headerlink" title="1.2.3：浏览器缓存过期机制："></a>1.2.3：浏览器缓存过期机制：</h3><h4 id="1-2-3-1-：-最后修改时间："><a href="#1-2-3-1-：-最后修改时间：" class="headerlink" title="1.. 2. 3.1 ： 最后修改时间："></a>1.. 2. 3.1 ： 最后修改时间：</h4><p>系统调用会获取文件的最后修改时间，如果没有发生变化就返回给浏览器 304 的状态码，表示没有发生变化，然后浏览器就使用的本地的缓存展示资源，</p>
+<p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-33.png" alt="img"></p>
+<h4 id="1-2-3-2-：Etag-标记"><a href="#1-2-3-2-：Etag-标记" class="headerlink" title="1. 2. 3.2 ：Etag 标记"></a>1. 2. 3.2 ：Etag 标记</h4><p>基于 Etag 标记是否一致做判断页面是否发生过变化，比如基于 Nginx 的 etag on 来实现</p>
+<p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-34.png" alt="img"></p>
+<h4 id="1-2-3-3-：-过期时间："><a href="#1-2-3-3-：-过期时间：" class="headerlink" title="1.. 2. 3.3 ： 过期时间："></a>1.. 2. 3.3 ： 过期时间：</h4><p>以上两种都需要发送请求，即不管资源是否过期都要发送请求进行协商，这样会消耗不必要的时间，因此有了缓存的过期时间，即第一次请求资源的时候带一个资源的过期时间，默认为 30 天，当前这种方式使用的比表较多，但是无法保证客户的时间都是准确并且一致的，因此假如一个最大生存周期，使用用户本地的时间计算缓存数据是否超过多少天，下面的过期时间为 2027 年，但是缓存的最大生存周期计算为天等于 3650 天即 10 年，过期时间如下：</p>
+<p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-35.png" alt="img"></p>
+<h2 id="1-3-：-CDN-缓存"><a href="#1-3-：-CDN-缓存" class="headerlink" title="1.3 ： CDN 缓存"></a>1.3 ： CDN 缓存</h2><h3 id="1-3-1：什么是-CND："><a href="#1-3-1：什么是-CND：" class="headerlink" title="1.3.1：什么是 CND："></a>1.3.1：什么是 CND：</h3><p>内容分发网络（Content Delivery Network），通过将服务内容分发至全网加速节点，利用全球调度系统使用户能够就近获取，有效降低访问延迟，提升服务可用性，CDN 第一降低机房的使用带宽，因为很多资源通过 CDN 就直接返回用户了，第二解决不同运营商之间的互联，因为可以让联通的网络访问联通让电信的网络访问电信，起到加速用户访问的目的， 第三：解决用户访问的地域问题，就近返回用户资源。<br>百度 CDN：<a href="https://cloud.baidu.com/product/cdn.html" target="_blank" rel="noopener">https://cloud.baidu.com/product/cdn.html</a><br>阿里 CDN：<a href="https://www.aliyun.com/product/cdn?spm=5176.8269123.416540.50.728y8n" target="_blank" rel="noopener">https://www.aliyun.com/product/cdn?spm=5176.8269123.416540.50.728y8n</a><br>腾讯 CDN：<a href="https://www.qcloud.com/product/cdn" target="_blank" rel="noopener">https://www.qcloud.com/product/cdn</a></p>
+<h3 id="1-3-2：用户请求-CDN-流程："><a href="#1-3-2：用户请求-CDN-流程：" class="headerlink" title="1.3.2：用户请求 CDN 流程："></a>1.3.2：用户请求 CDN 流程：</h3><p>提前对静态内容进行预缓存，避免大量的请求回源，导致主站网络带宽被打满而导致数据无法更新，另外 CDN 可以将数据根据访问的热度不同而进行不同级别的缓存，例如访问量最高的资源访问 CDN边缘节点的内存，其次的放在 SSD 或者 SATA，再其次的放在云存储，这样兼顾了速度与成本。</p>
+<p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-36.png" alt="img"></p>
+<h3 id="1-3-3：CDN-主要优势："><a href="#1-3-3：CDN-主要优势：" class="headerlink" title="1.3.3：CDN 主要优势："></a>1.3.3：CDN 主要优势：</h3><p>提前对静态内容进行预缓存，避免大量的请求回源，导致主站网络带宽被打满而导致数据无法更新，另外 CDN 可以将数据根据访问的热度不同而进行不同级别的缓存，例如访问量最高的资源访问 CDN边缘节点的内存，其次的放在 SSD 或者 SATA，再其次的放在云存储，这样兼顾了速度与成本。缓存-缓存到最快的地方如内存，缓存的数据准确命中率高，访问速度就快<br>调度准确-将用户调度到最近的边缘节点<br>性能优化-CDN 专门用于缓存响应速度快<br>安全相关-抵御攻击<br>节省带宽：由于用户请求由边缘节点响应，因此大幅降低到源站带宽。</p>
+<h2 id="1-4-：应用层缓存："><a href="#1-4-：应用层缓存：" class="headerlink" title="1.4 ：应用层缓存："></a>1.4 ：应用层缓存：</h2><p>Nginx、PHP 等 web 服务可以设置应用缓存以加速响应用户请求，另外有些解释性语言比如 PHP/Python不能直接运行，需要先编译成字节码，但字节码需要解释器解释为机器码之后才能执行，因此字节码也是一种缓存，有时候会出现程序代码上线后字节码没有更新的现象。</p>
+<h2 id="1-5-：-其他层面缓存"><a href="#1-5-：-其他层面缓存" class="headerlink" title="1.5 ： 其他层面缓存"></a>1.5 ： 其他层面缓存</h2><p>CPU 缓存(L1 的数据缓存和 L1 的指令缓存)、二级缓存、三级缓存</p>
+<p><img src="/2020/03/09/redis/Redis%E7%BC%93%E5%AD%98%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5/image-37.png" alt="img"></p>
+<p>磁盘缓存<br>RAID 卡<br>分布式缓存：redis、memcache</p>
+<figure class="highlight vala"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta"># MegaCli64 -LDinfo -Lall -aAll</span></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E7%90%86%E8%AE%BA/" <i class="fa fa-tag"></i>理论</a>
+              <a href="/tags/redis/" <i class="fa fa-tag"></i>redis</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/09/redis/redis%E5%AF%B9%E6%AF%94memcached/" rel="prev" title="redis对比memcached">
+      <i class="fa fa-chevron-left"></i> redis对比memcached
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/09/php/%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85php/" rel="next" title="一键安装php">
+      一键安装php <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#一-：-缓存-概念-："><span class="nav-number">1.</span> <span class="nav-text">一 ： 缓存 概念 ：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-：-系统缓存"><span class="nav-number">2.</span> <span class="nav-text">1 .1 ： 系统缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-1：buffer-与-cache："><span class="nav-number">2.1.</span> <span class="nav-text">1.1.1：buffer 与 cache：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-2：cache-的保存位置："><span class="nav-number">2.2.</span> <span class="nav-text">1.1.2：cache 的保存位置：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-3：cache-的特性："><span class="nav-number">2.3.</span> <span class="nav-text">1.1.3：cache 的特性：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-：-用户层缓存："><span class="nav-number">3.</span> <span class="nav-text">1.2 ： 用户层缓存：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-1：DNS-缓存："><span class="nav-number">3.1.</span> <span class="nav-text">1.2.1：DNS 缓存：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-2：火狐浏览器缓存："><span class="nav-number">3.2.</span> <span class="nav-text">1.2.2：火狐浏览器缓存：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-2-3：浏览器缓存过期机制："><span class="nav-number">3.3.</span> <span class="nav-text">1.2.3：浏览器缓存过期机制：</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-3-1-：-最后修改时间："><span class="nav-number">3.3.1.</span> <span class="nav-text">1.. 2. 3.1 ： 最后修改时间：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-3-2-：Etag-标记"><span class="nav-number">3.3.2.</span> <span class="nav-text">1. 2. 3.2 ：Etag 标记</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#1-2-3-3-：-过期时间："><span class="nav-number">3.3.3.</span> <span class="nav-text">1.. 2. 3.3 ： 过期时间：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-：-CDN-缓存"><span class="nav-number">4.</span> <span class="nav-text">1.3 ： CDN 缓存</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-1：什么是-CND："><span class="nav-number">4.1.</span> <span class="nav-text">1.3.1：什么是 CND：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-2：用户请求-CDN-流程："><span class="nav-number">4.2.</span> <span class="nav-text">1.3.2：用户请求 CDN 流程：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-3-3：CDN-主要优势："><span class="nav-number">4.3.</span> <span class="nav-text">1.3.3：CDN 主要优势：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-：应用层缓存："><span class="nav-number">5.</span> <span class="nav-text">1.4 ：应用层缓存：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-：-其他层面缓存"><span class="nav-number">6.</span> <span class="nav-text">1.5 ： 其他层面缓存</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

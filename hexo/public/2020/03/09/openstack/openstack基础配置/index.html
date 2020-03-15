@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta property="og:type" content="article">
+<meta property="og:title" content="openstack基础配置">
+<meta property="og:url" content="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_124855-1024x574.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_152750-1024x238.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_153622.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_163651.png">
+<meta property="article:published_time" content="2020-03-09T08:13:20.000Z">
+<meta property="article:modified_time" content="2020-03-10T10:56:06.764Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="openstack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_124855-1024x574.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>openstack基础配置 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          openstack基础配置
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-09 16:13:20" itemprop="dateCreated datePublished" datetime="2020-03-09T16:13:20+08:00">2020-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 18:56:06" itemprop="dateModified" datetime="2020-03-10T18:56:06+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/openstack/" itemprop="url" rel="index">
+                    <span itemprop="name">openstack</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><img src="/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_124855-1024x574.png" alt="img"></p>
+<a id="more"></a>
+
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">https:<span class="regexp">//</span>docs.openstack.org<span class="regexp">/ocata/</span>zh_CN<span class="regexp">/install-guide-rdo/</span> 中文手册</span><br></pre></td></tr></table></figure>
+
+<p>管理端</p>
+<p>ocata yum源</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[root@controller1 ~]#cat &gt;/etc/yum.repos.d/ocata.repo &lt;&lt;EOF</span><br><span class="line">[ocata]</span><br><span class="line"><span class="attribute">name</span>=ocata</span><br><span class="line"><span class="attribute">baseurl</span>=https://mirrors.aliyun.com/centos/7/cloud/x86_64/openstack-ocata/</span><br><span class="line"><span class="attribute">gpgcheck</span>=0</span><br><span class="line">EOF</span><br></pre></td></tr></table></figure>
+
+<p>安装 openstack 客户端 在控制节点和计算节点。</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[root<span class="symbol">@node1</span> ~]<span class="meta">#yum install -y python-openstackclient</span></span><br></pre></td></tr></table></figure>
+
+<p>安装 mariadb+mem：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">控制节点安装yum <span class="keyword">install</span> -y python2-PyMySQL</span><br></pre></td></tr></table></figure>
+
+<p>数据库服务器</p>
+<figure class="highlight cs"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">[<span class="meta">root@linux-host4 ~</span>]<span class="meta"># yum install mariadb mariadb-server </span></span><br><span class="line">配置数据库：</span><br><span class="line">[<span class="meta">root@linux-host4 ~</span>]<span class="meta"># vim /etc/my.cnf.d/openstack.cnf</span></span><br><span class="line">[<span class="meta">mysqld</span>]</span><br><span class="line">bind-address = <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span> <span class="meta">#指定监听地址</span></span><br><span class="line"><span class="keyword">default</span>-storage-engine = innodb <span class="meta">#默认引擎</span></span><br><span class="line">innodb_file_per_table = <span class="keyword">on</span> <span class="meta">#开启每个表都有独立表空间</span></span><br><span class="line">max_connections = <span class="number">4096</span> <span class="meta">#最大连接数</span></span><br><span class="line">collation-server = utf8_general_ci <span class="meta">#不区分大小写排序</span></span><br><span class="line">character-<span class="keyword">set</span>-server = utf8 <span class="meta">#设置编码</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">systemctl enable mariadb.service</span><br><span class="line">systemctl start mariadb.service</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">mysql_secure_installation</span><br><span class="line"></span><br><span class="line">mysql -uroot -p123456</span><br></pre></td></tr></table></figure>
+
+<p>安装 消息队列</p>
+<figure class="highlight dsconfig"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">安全并配置组件</span><br><span class="line">安装包：</span><br><span class="line"></span><br><span class="line"><span class="comment"># yum install rabbitmq-server</span></span><br><span class="line">启动消息队列服务并将其配置为随系统启动：</span><br><span class="line"><span class="comment"># systemctl start rabbitmq-server.service</span></span><br><span class="line"><span class="comment"># systemctl enable rabbitmq-server.service</span></span><br><span class="line"><span class="string">hostnamectl </span><span class="built_in">set-hostname</span> <span class="string">rabbitmq-server1.</span><span class="string">qh.</span><span class="string">net</span></span><br><span class="line"><span class="string">vim </span>/<span class="string">etc/</span><span class="string">hosts</span></span><br><span class="line"><span class="string">192.</span><span class="string">168.</span><span class="string">50.</span><span class="string">102 </span><span class="string">rabbitmq-server1</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">rabbitmq-</span><span class="string">plugins </span><span class="string">enable </span><span class="string">rabbitmq_management </span><span class="comment">#开启web管理界面插件  node12都要开</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="string">http:</span>//<span class="string">192.</span><span class="string">168.</span><span class="string">50.</span><span class="string">102:15672/</span></span><br><span class="line"><span class="string">guest </span> <span class="string">suest</span></span><br><span class="line"><span class="string">#</span><span class="comment">##将rabbitMQ的节点添加到集群：</span></span><br><span class="line">将启动服务的1的<span class="string">cookie </span>发送到 2的节点</span><br><span class="line">[<span class="string">root@</span><span class="string">rabbitmq-server1 </span>~]<span class="comment">#scp /var/lib/rabbitmq/.erlang.cookie 192.168.50.102:/var/lib/rabbitmq/</span></span><br><span class="line">1服务启动 2服务停止</span><br><span class="line">[<span class="string">root@</span><span class="string">rabbitmq-server1 </span>~]<span class="comment"># rabbitmqctl  stop_app #停止应程序  node1关 node2不关</span></span><br><span class="line">[<span class="string">root@</span><span class="string">rabbitmq-server1 </span>~]<span class="comment"># rabbitmqctl   reset #清空元数据</span></span><br><span class="line">[<span class="string">root@</span><span class="string">rabbitmq-server1 </span>~]<span class="comment"># rabbitmqctl  join_cluster rabbit@rabbitmq-server2 --ram　＃将rabbitmq-server1添加到集群当中，并成为内存节点，不加--ram默认是磁盘节点</span></span><br><span class="line"><span class="string">Clustering </span><span class="string">node </span><span class="string">'rabbit@rabbitmq-server1'</span> <span class="string">with </span><span class="string">'rabbit@rabbitmq-server2'</span> ...</span><br><span class="line">...<span class="string">done.</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[<span class="string">root@</span><span class="string">rabbitmq-server1 </span>~]<span class="comment">#rabbitmqctl  join_cluster rabbit@rabbitmq-server2 --ram</span></span><br><span class="line"><span class="string">Clustering </span><span class="string">node </span><span class="string">'rabbit@rabbitmq-server1'</span> <span class="string">with </span><span class="string">'rabbit@rabbitmq-server2'</span> ...</span><br><span class="line">[<span class="string">root@</span><span class="string">rabbitmq-server1 </span>~]<span class="comment">#rabbitmqctl  cluster_status</span></span><br><span class="line"><span class="string">Cluster </span><span class="string">status </span><span class="string">of </span><span class="string">node </span><span class="string">'rabbit@rabbitmq-server1'</span> ...</span><br><span class="line">[&#123;<span class="string">nodes,</span>[&#123;<span class="string">disc,</span>[<span class="string">'rabbit@rabbitmq-server2'</span>]&#125;,</span><br><span class="line">         &#123;<span class="string">ram,</span>[<span class="string">'rabbit@rabbitmq-server1'</span>]&#125;]&#125;,</span><br><span class="line"> &#123;<span class="string">alarms,</span>[&#123;<span class="string">'rabbit@rabbitmq-server2'</span>,[]&#125;]&#125;]</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_152750-1024x238.png" alt="img"></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">更改为镜像模式：</span><br><span class="line">2.6.1：只要在其中一台节点执行以下命令即可：</span><br><span class="line"></span><br><span class="line">[root@rabbitmq-server1 ~]# rabbitmqctl set_policy  ha-all <span class="string">"#"</span>  <span class="string">'&#123;"ha-mode":"all"&#125;'</span> #<span class="string">"#"</span>为任意0个或多个即为所有，也可以使用<span class="string">"^test"</span>匹配开头，还可以使用其他正则匹配</span><br><span class="line">Setting<span class="built_in"> policy </span><span class="string">"ha-all"</span> <span class="keyword">for</span> pattern <span class="string">"#"</span> <span class="keyword">to</span> <span class="string">"&#123;\"ha-mode\":\"all\"&#125;"</span> with priority <span class="string">"0"</span> <span class="built_in">..</span>.</span><br><span class="line"><span class="built_in">..</span>.done.</span><br></pre></td></tr></table></figure>
+
+<p>添加 openstack 用户：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@rabbitmq-server1 ~]#rabbitmqctl add_user openstack openstack123</span><br><span class="line">Creating<span class="built_in"> user </span><span class="string">"openstack"</span> <span class="built_in">..</span>.</span><br></pre></td></tr></table></figure>
+
+<p>给“openstack“用户配置写和读权限：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[root@rabbitmq-server1 ~]#rabbitmqctl set_permissions openstack <span class="string">".*"</span> <span class="string">".*"</span> <span class="string">".*"</span></span><br><span class="line">Setting permissions <span class="keyword">for</span><span class="built_in"> user </span><span class="string">"openstack"</span> <span class="keyword">in</span> vhost <span class="string">"/"</span> <span class="built_in">..</span></span><br></pre></td></tr></table></figure>
+
+<p>验证</p>
+<p><img src="/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_153622.png" alt="img"></p>
+<p>memcache配置</p>
+<p>两个节点都安装memcache</p>
+<figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">yum install memcached</span><br><span class="line">控制节点安装yum install python-memcached -y</span><br><span class="line">vim /etc/sysconfig/memcached</span><br><span class="line">PORT=<span class="string">"11211"</span></span><br><span class="line">USER=<span class="string">"memcached"</span></span><br><span class="line">MAXCONN=<span class="string">"4096"</span></span><br><span class="line">CACHESIZE=<span class="string">"1024"</span></span><br><span class="line">OPTIONS=<span class="string">"-l 0.0.0.0,::1"</span></span><br><span class="line"></span><br><span class="line">scp /etc/sysconfig/memcached <span class="number">192.168</span>.<span class="number">50.102</span><span class="symbol">:/etc/sysconfig/memcached</span></span><br><span class="line">[root<span class="variable">@rabbitmq</span>-server1 ~]<span class="comment">#systemctl start memcached.service</span></span><br><span class="line">[root<span class="variable">@rabbitmq</span>-server1 ~]<span class="comment">#systemctl enable memcached.service</span></span><br></pre></td></tr></table></figure>
+
+<p>haproxy</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/sysctl.conf</span><br><span class="line"><span class="built_in">..</span>.</span><br><span class="line">root@ubuntu:~# sysctl -p</span><br><span class="line">net.ipv4.ip_nonlocal_bind = 1</span><br><span class="line">net.ipv4.ip_forward = 1</span><br><span class="line">root@ubuntu:~# vim /etc/haproxy/haproxy.cfg</span><br><span class="line">listen MYSQL_PORT_3306</span><br><span class="line">        bind 192.168.220.248:3306</span><br><span class="line">        mode tcp</span><br><span class="line">        balance roundrobin</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.50.102:3306 weight 1 check<span class="built_in"> port </span>3306 inter 3s fall 3 rise 5</span><br><span class="line"></span><br><span class="line">listen OPENSTACK_RABBIT</span><br><span class="line">        bind 192.168.220.248:5672</span><br><span class="line">        mode tcp</span><br><span class="line">        balance roundrobin</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.50.102:5672 weight 1 check<span class="built_in"> port </span>3306 inter 3s fall 3 rise 5</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.50.101:5672 weight 1 check<span class="built_in"> port </span>3306 inter 3s fall 3 rise 5 backup</span><br><span class="line"></span><br><span class="line">listen OPENSTACK_memcache</span><br><span class="line">        bind 192.168.220.248:11211</span><br><span class="line">        mode tcp</span><br><span class="line">        balance roundrobin</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.50.101:11211 weight 1 check<span class="built_in"> port </span>3306 inter 3s fall 3 rise 5</span><br><span class="line">       <span class="built_in"> server </span>web1 192.168.50.102:11211 weight 1 check<span class="built_in"> port </span>3306 inter 3s fall 3 rise 5 backup</span><br></pre></td></tr></table></figure>
+
+<p>测试</p>
+<p><img src="/2020/03/09/openstack/openstack%E5%9F%BA%E7%A1%80%E9%85%8D%E7%BD%AE/screenshot_20190619_163651.png" alt="img"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/openstack/" <i class="fa fa-tag"></i>openstack</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/09/openstack/keystone%E8%AE%A4%E8%AF%81/" rel="prev" title="keystone认证">
+      <i class="fa fa-chevron-left"></i> keystone认证
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/09/redis/Redis-cluster%E9%9B%86%E7%BE%A4%E8%8A%82%E7%82%B9%E7%BB%B4%E6%8A%A4/" rel="next" title="Redis-cluster集群节点维护">
+      Redis-cluster集群节点维护 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

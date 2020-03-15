@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="MySQL中如何找出碎片化严重的表">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL中如何找出碎片化严重的表,表空间回收">
+<meta property="og:url" content="http://yoursite.com/2020/03/09/Mysql/MySQL%E4%B8%AD%E5%A6%82%E4%BD%95%E6%89%BE%E5%87%BA%E7%A2%8E%E7%89%87%E5%8C%96%E4%B8%A5%E9%87%8D%E7%9A%84%E8%A1%A8-%E8%A1%A8%E7%A9%BA%E9%97%B4%E5%9B%9E%E6%94%B6/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="MySQL中如何找出碎片化严重的表">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-03-09T07:02:09.000Z">
+<meta property="article:modified_time" content="2020-03-10T10:58:05.160Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="mysql">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/09/Mysql/MySQL%E4%B8%AD%E5%A6%82%E4%BD%95%E6%89%BE%E5%87%BA%E7%A2%8E%E7%89%87%E5%8C%96%E4%B8%A5%E9%87%8D%E7%9A%84%E8%A1%A8-%E8%A1%A8%E7%A9%BA%E9%97%B4%E5%9B%9E%E6%94%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>MySQL中如何找出碎片化严重的表,表空间回收 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/09/Mysql/MySQL%E4%B8%AD%E5%A6%82%E4%BD%95%E6%89%BE%E5%87%BA%E7%A2%8E%E7%89%87%E5%8C%96%E4%B8%A5%E9%87%8D%E7%9A%84%E8%A1%A8-%E8%A1%A8%E7%A9%BA%E9%97%B4%E5%9B%9E%E6%94%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MySQL中如何找出碎片化严重的表,表空间回收
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-09 15:02:09" itemprop="dateCreated datePublished" datetime="2020-03-09T15:02:09+08:00">2020-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 18:58:05" itemprop="dateModified" datetime="2020-03-10T18:58:05+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>MySQL中如何找出碎片化严重的表</p>
+<a id="more"></a>
+
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> table_schema, <span class="built_in">TABLE_NAME</span>, concat(data_free/<span class="number">1024</span>/<span class="number">1024</span>, <span class="string">'M'</span>) <span class="keyword">as</span> data_free</span><br><span class="line"><span class="keyword">FROM</span> `information_schema`.<span class="keyword">tables</span></span><br><span class="line"><span class="keyword">WHERE</span> data_free &gt; <span class="number">3</span> * <span class="number">1024</span> * <span class="number">1024</span></span><br><span class="line">	<span class="keyword">AND</span> ENGINE = <span class="string">'innodb'</span></span><br><span class="line"><span class="keyword">ORDER</span> <span class="keyword">BY</span> data_free <span class="keyword">DESC</span></span><br><span class="line">mysql&gt; <span class="keyword">create</span> <span class="keyword">table</span> frag_tab_myisam</span><br><span class="line">    -&gt; (</span><br><span class="line">    -&gt;     id  <span class="type">int</span>,</span><br><span class="line">    -&gt;     <span class="type">name</span> <span class="type">varchar</span>(<span class="number">63</span>)</span><br><span class="line">    -&gt; ) engine=MyISAM;</span><br><span class="line">Query OK, <span class="number">0</span> <span class="keyword">rows</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line">mysql&gt; <span class="keyword">insert</span> <span class="keyword">into</span> frag_tab_myisam</span><br><span class="line">    -&gt; <span class="keyword">values</span>(<span class="number">1</span>, <span class="string">'it is only test row 1'</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="keyword">row</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line">mysql&gt; <span class="keyword">insert</span> <span class="keyword">into</span> frag_tab_myisam</span><br><span class="line">    -&gt; <span class="keyword">values</span>(<span class="number">2</span>, <span class="string">'it is only test row 2'</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="keyword">row</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line">mysql&gt; <span class="keyword">insert</span> <span class="keyword">into</span> frag_tab_myisam</span><br><span class="line">    -&gt; <span class="keyword">values</span>(<span class="number">3</span>, <span class="string">'it is only test row 3'</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="keyword">row</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line">mysql&gt; <span class="keyword">insert</span> <span class="keyword">into</span> frag_tab_myisam</span><br><span class="line">    -&gt; <span class="keyword">values</span>(<span class="number">4</span>, <span class="string">'it is only test row 4'</span>);</span><br><span class="line">Query OK, <span class="number">1</span> <span class="keyword">row</span> affected (<span class="number">0.00</span> sec)</span><br><span class="line">mysql&gt;  <span class="keyword">show</span> <span class="keyword">table</span> status <span class="keyword">from</span> kkk <span class="keyword">like</span> <span class="string">'frag_tab_myisam'</span> \G;</span><br></pre></td></tr></table></figure>
+
+<p>在MySQL中，可以使用OPTIMIZE TABLE、ALTER TABLE XXXX ENGINE = INNODB这两种方法降低碎片，关于这两者的简单介绍如下：</p>
+<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">OPTIMIZE <span class="keyword">TABLE</span></span><br><span class="line">OPTIMIZE <span class="keyword">TABLE</span> 会重组表和索引的物理存储，减少对存储空间使用和提升访问表时的IO效率。对每个表所做的确切更改取决于该表使用的存储引擎</span><br><span class="line">OPTIMIZE <span class="keyword">TABLE</span>的支持表类型：INNODB,MYISAM, ARCHIVE，NDB；它会重组表数据和索引的物理页，对于减少所占空间和在访问表时优化IO有效果。OPTIMIZE 操作会暂时锁住表<span class="comment">,</span>而且数据量越大<span class="comment">,</span>耗费的时间也越长。</span><br><span class="line">OPTIMIZE <span class="keyword">TABLE</span>后，表的变化跟存储引擎有关。</span><br><span class="line">对于MyISAM， PTIMIZE <span class="keyword">TABLE</span> 的工作原理如下：</span><br><span class="line">· 如果表有已删除的行或拆分行（split rows），修复该表。</span><br><span class="line">· 如果未对索引页面进行排序，对它们进行排序。</span><br><span class="line">· 如果表的统计信息不是最新的（并且无法通过对索引进行排序来完成修复），更新它们。</span><br><span class="line">英文原文如下：</span><br><span class="line">For MyISAM tables, OPTIMIZE <span class="keyword">TABLE</span> works <span class="comment">as follows:</span></span><br><span class="line"><span class="number">1.</span>     If the <span class="keyword">table</span> has <span class="comment">deleted or split rows, repair the table.</span></span><br><span class="line"><span class="number">2.</span>     If the index pages are not sorted, sort them.</span><br><span class="line"><span class="number">3.</span>     If the <span class="keyword">table</span>'s <span class="comment">statistics are not up to date (and the repair could not be accomplished by sorting the index), update them.</span></span><br><span class="line">对于InnoDB而言，PTIMIZE <span class="keyword">TABLE</span> 的工作原理如下</span><br><span class="line">对于InnoDB表， OPTIMIZE <span class="keyword">TABLE</span>映射到ALTER <span class="comment">TABLE ... FORCE</span>（或者这样翻译：在<span class="comment">InnoDB</span>表中等价<span class="comment"> ALTER TABLE ... FORCE</span>），它重建表以更新索引统计信息并释放聚簇索引中未使用的空间。当您在<span class="comment">InnoDB</span>表上运行时，它会显示在<span class="comment">OPTIMIZE TABLE</span>的输出中，如下所示：</span><br><span class="line">mysql&gt; OPTIMIZE <span class="keyword">TABLE</span> foo; </span><br><span class="line">+----------+----------+----------+-------------------------------------------------------------------+</span><br><span class="line">| <span class="keyword">Table</span>    | Op       |<span class="comment"> Msg_type</span> |<span class="comment"> Msg_text</span>                                                          |</span><br><span class="line">+----------+----------+----------+-------------------------------------------------------------------+</span><br><span class="line">| test.foo | optimize | note     | <span class="keyword">Table</span> does <span class="comment">not support optimize, doing recreate + analyze instead</span> |</span><br><span class="line">| test.foo | optimize | status   | OK                                                                |</span><br><span class="line">+----------+----------+----------+-------------------------------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>OPTIMIZE TABLE对InnoDB的普通表和分区表使用online DDL，从而减少了并发DML操作的停机时间。由OPTIMIZE TABLE触发表的重建，并在ALTER TABLE … FORCE的掩护下完成。仅在操作的准备阶段和提交阶段期间短暂地进行独占表锁定。在准备阶段，更新元数据并创建中间表。在提交阶段，将提交表元数据更改。</p>
+<p>OPTIMIZE TABLE 在以下条件下使用表复制方法重建表：</p>
+<p>OPTIMIZE TABLE 对于包含FULLTEXT索引的InnoDB表不支持online DDL。而是使用复制表的方法。</p>
+<p>InnoDB使用页面分配方法存储数据，并且不会像传统存储引擎（例如MyISAM）那样受到碎片的影响。在考虑是否运行优化时，请考虑服务器将处理的事务的工作负载：</p>
+<p>当行有足够的空间时，对行的更新通常会重写同一页面中的数据，具体取决于数据类型和行格式。</p>
+<p>高并发工作负载可能会随着时间的推移在索引中留下空白，因为InnoDB通过其MVCC机制保留了相同数据的多个版本。</p>
+<p>另外，对于innodb_file_per_table=1的InnoDB表，OPTIMIZE TABLE 会重组表和索引的物理存储，将空闲空间释放给操作系统。也就是说OPTIMIZE TABLE [tablename] 这种方式只适用于独立表空间</p>
+<p><strong>ALTER TABLE table_name ENGINE = Innodb;</strong></p>
+<p>这其实是一个NULL操作,表面上看什么也不做,实际上重新整理碎片了.当执行优化操作时,实际执行的是一个空的 ALTER 命令,但是这个命令也会起到优化的作用,它会重建整个表,删掉未使用的空白空间.</p>
+<p>Running ALTER TABLE <em>tbl_name</em> ENGINE=INNODB on an existing InnoDB table performs a “null” ALTER TABLE operation, which can be used to defragment an InnoDB table, as described in Section 15.11.4, “Defragmenting a Table”. Running ALTER TABLE <em>tbl_name</em> FORCE on an InnoDB table performs the same function.</p>
+<p>问题1：那么是用OPTIMIZE TABLE 还是ALTER TABLE xxxx ENGINE= INNODB好呢？</p>
+<p>​    其实对于InnoDB引擎，ALTER TABLE xxxx ENGINE= INNODB是执行了一个空的ALTER TABLE操作。而OPTIMIZE TABLE等价于ALTER TABLE … FORCE。 参考上面描述，在有些情况下，OPTIMIZE TABLE 还是ALTER TABLE xxxx ENGINE= INNODB基本上是一样的。但是在有些情况下，ALTER TABLE xxxx ENGINE= INNODB更好。例如old_alter_table系统变量没有启用等等。另外对于MyISAM类型表，使用ALTER TABLE xxxx ENGINE= INNODB是明显要优于OPTIMIZE TABLE这种方法的。</p>
+<p>问题2：ALTER TABLE xxxx ENGINE= INNODB 表上的索引碎片会整理么</p>
+<p>   ALTER TABLE ENGINE= INNODB,会重新整理在聚簇索引上的数据和索引。如果你想用实验验证，可以对比执行该命令前后index_length的大小。</p>
+<p><strong>其它工具</strong></p>
+<p>​    网友建议使用pt工具或者gh-ost降低表的碎片化，个人暂时还没有使用过这类工具，估计也是封装了上面两个命令。此处不做展开介绍。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mysql/" <i class="fa fa-tag"></i>mysql</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/09/Mysql/INFORMATION-SCHEMA-INNODB-TRX-%E8%AF%A6%E8%A7%A3-%E8%A1%A8-%E9%94%81-%E7%AD%89%E5%BE%85%E8%B6%85%E6%97%B6/" rel="prev" title="INFORMATION_SCHEMA.INNODB_TRX,详解,表,锁,等待超时">
+      <i class="fa fa-chevron-left"></i> INFORMATION_SCHEMA.INNODB_TRX,详解,表,锁,等待超时
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/09/ha+kp/%E5%BC%80%E5%90%AFhaproxy%E7%9B%91%E6%8E%A7%E9%A1%B5%E9%9D%A2%E5%92%8C%E9%A1%B5%E9%9D%A2%E8%AF%A6%E7%BB%86%E5%8F%82%E6%95%B0%E4%BB%8B%E7%BB%8D/" rel="next" title="开启haproxy监控页面和页面详细参数介绍">
+      开启haproxy监控页面和页面详细参数介绍 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

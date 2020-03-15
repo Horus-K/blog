@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="redis配置文件">
+<meta property="og:type" content="article">
+<meta property="og:title" content="redis配置文件">
+<meta property="og:url" content="http://yoursite.com/2020/03/09/redis/redis%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="redis配置文件">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/redis/redis%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/image-42.png">
+<meta property="article:published_time" content="2020-03-09T11:55:21.000Z">
+<meta property="article:modified_time" content="2020-03-10T10:28:10.463Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="redis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/09/redis/redis%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/image-42.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/09/redis/redis%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>redis配置文件 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/09/redis/redis%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          redis配置文件
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-09 19:55:21" itemprop="dateCreated datePublished" datetime="2020-03-09T19:55:21+08:00">2020-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 18:28:10" itemprop="dateModified" datetime="2020-03-10T18:28:10+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/redis/" itemprop="url" rel="index">
+                    <span itemprop="name">redis</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>redis配置文件</p>
+<a id="more"></a>
+
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">bind 0.0.0.0 #监听地址，可以用空格隔开后多个监听 IP</span><br><span class="line">protected-mode <span class="literal">yes</span> #redis3.2 之后加入的新特性，在没有设置 bind<span class="built_in"> IP </span>和密码的时候只允许访问</span><br><span class="line">127.0.0.1:6379</span><br><span class="line">port 6379 #监听端口</span><br><span class="line">tcp-backlog 511 #三次握手的时候<span class="built_in"> server </span>端收到<span class="built_in"> client </span>ack 确认号之后的队列值。</span><br><span class="line">timeout 0 #客户端和 Redis 服务端的连接超时时间，默认是 0，表示永不超时。</span><br><span class="line">tcp-keepalive 300 #tcp 会话保持时间</span><br><span class="line">daemonize <span class="literal">no</span> #认情况下 redis 不是作为守护进程运行的，如果你想让它在后台运行，你就把它改成</span><br><span class="line"><span class="literal">yes</span>,当 redis 作为守护进程运行的时候，它会写一个 pid 到 /var/run/redis.pid 文件里面</span><br><span class="line">supervised <span class="literal">no</span> #和操作系统相关参数，可以设置通过 upstart 和 systemd 管理 Redis 守护进程，centos 7以后都使用 </span><br><span class="line">systemdpidfile /var/run/redis_6379.pid #pid 文件路径</span><br><span class="line">loglevel notice #日志级别</span><br><span class="line">logfile <span class="string">""</span> #日志路径</span><br><span class="line">databases 16 #设置 db 库数量，默认 16 个库</span><br><span class="line">always-show-logo <span class="literal">yes</span> #在启动 redis 时是否显示 log</span><br><span class="line">save 900 1 #在 900 秒内有一个键内容发生更改就出就快照机制</span><br><span class="line">save 300 10</span><br><span class="line">save 60 10000</span><br><span class="line">stop-writes-on-bgsave-<span class="builtin-name">error</span> <span class="literal">no</span> #快照出错时是否禁止 redis 写入操作</span><br><span class="line">rdbcompression <span class="literal">yes</span> #持久化到 RDB 文件时，是否压缩，<span class="string">"yes"</span>为压缩，<span class="string">"no"</span>则反之</span><br><span class="line">rdbchecksum <span class="literal">yes</span> #是否开启 RC64 校验，默认是开启</span><br><span class="line">dbfilename dump.rdb #快照文件名</span><br><span class="line">dir ./ #快照文件保存路径</span><br><span class="line">dir ./ #快照文件保存路径</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/redis/redis%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/image-42.png" alt="img"></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">replica</span>-serve-stale-data yes #当从库同主库失去连接或者复制正在进行，从机库有两种运行方式：<span class="number">1</span>) 如</span><br><span class="line">果 <span class="keyword">replica</span>-serve-stale-data 设置为 yes(默认设置)，从库会继续响应客户端的读请求。<span class="number">2</span>) 如果 <span class="keyword">replica</span>-</span><br><span class="line">serve-stale-data 设置为 <span class="keyword">no</span>，除去指定的命令之外的任何请求都会返回一个错误"SYNC with master in</span><br><span class="line">progress"。</span><br><span class="line"><span class="keyword">replica</span>-<span class="keyword">read</span>-<span class="keyword">only</span> yes #是否设置从库只读</span><br><span class="line">repl-diskless-sync <span class="keyword">no</span> #是否使用 socket 方式复制数据，目前 redis 复制提供两种方式，disk 和 socket，如</span><br><span class="line">果新的 slave 连上来或者重连的 slave 无法部分同步，就会执行全量同步，master 会生成 rdb 文件，有</span><br><span class="line"><span class="number">2</span> 种方式：disk 方式是 master 创建一个新的进程把 rdb 文件保存到磁盘，再把磁盘上的 rdb 文件传递给 slave，socket 是 master 创建一个新的进程，直接把 rdb 文件以 socket 的方式发给 slave，disk 方式的时候，当一个 rdb 保存的过程中，多个 slave 都能共享这个 rdb 文件，socket 的方式就是一个个 slave顺序复制，只有在磁盘速度缓慢但是网络相对较快的情况下才使用 socket 方式，否则使用默认的 disk方式</span><br><span class="line">repl-diskless-sync-delay <span class="number">30</span> #diskless 复制的延迟时间，设置 <span class="number">0</span> 为关闭，一旦复制开始还没有结束之前，</span><br><span class="line">master 节点不会再接收新 slave 的复制请求，直到下一次开始</span><br><span class="line">repl-ping-slave-period <span class="number">10</span> #slave 根据 master 指定的时间进行周期性的 PING 监测</span><br><span class="line">repl-timeout <span class="number">60</span> #复制链接超时时间，需要大于 repl-ping-slave-period，否则会经常报超时</span><br><span class="line">repl-<span class="keyword">disable</span>-tcp-nodelay <span class="keyword">no</span> #在 socket 模式下是否在 slave 套接字发送 SYNC 之后禁用 TCP_NODELAY，如果你选择“yes”Redis 将使用更少的 TCP 包和带宽来向 slaves 发送数据。但是这将使数据传输到 slave上有延迟，Linux 内核的默认配置会达到 <span class="number">40</span> 毫秒，如果你选择了 "no" 数据传输到 salve 的延迟将会减少但要使用更多的带宽</span><br><span class="line">repl-backlog-size <span class="number">1</span>mb #复制缓冲区大小，只有在 slave 连接之后才分配内存。</span><br><span class="line">repl-backlog-ttl <span class="number">3600</span> #多次时间 master 没有 slave 连接，就清空 backlog 缓冲区。</span><br><span class="line"><span class="keyword">replica</span>-priority <span class="number">100</span> #当 master 不可用，Sentinel 会根据 slave 的优先级选举一个 master。最低的优先级</span><br><span class="line">的 slave，当选 master。而配置成 <span class="number">0</span>，永远不会被选举。</span><br><span class="line">requirepass foobared #设置 redis 连接密码</span><br><span class="line"><span class="keyword">rename</span>-command #重命名一些高危命令</span><br><span class="line">maxclients <span class="number">10000</span> #最大连接客户端</span><br><span class="line">maxmemory #最大内存，单位为bytes 字节，<span class="number">8</span>G内存的计算方式 <span class="number">8</span>(G)*<span class="number">1024</span>(MB)*<span class="number">1024</span>(KB)*<span class="number">1024</span>(Kbyte)，</span><br><span class="line">需要注意的是 slave 的输出缓冲区是不计算在 maxmemory 内。</span><br><span class="line">appendonly <span class="keyword">no</span> #是否开启 AOF 日志记录， 默认 redis 使用的是 rdb 方式持久化，这种方式在许多应用中已</span><br><span class="line">经足够用了。但是 redis 如果中途宕机，会导致可能有几分钟的数据丢失，根据 save 来策略进行持久化，</span><br><span class="line">Append <span class="keyword">Only</span> File 是另一种持久化方式，可以提供更好的持久化特性。Redis 会把每次写入的数据在接收后</span><br><span class="line">都写入 appendonly.aof 文件，每次启动时 Redis 都会先把这个文件的数据读入内存里，先忽略 RDB 文件。</span><br><span class="line">appendfilename "appendonly.aof" #AOF 文件名</span><br><span class="line">appendfsync everysec #aof 持久化策略的配置 , <span class="keyword">no</span> 表示不执行 fsync,由操作系统保证数据同步到磁盘,<span class="keyword">always</span> 表示每次写入都执行 fsync，以保证数据同步到磁盘,everysec 表示每秒执行一次 fsync，可能会导致丢失这 <span class="number">1</span>s 数据。</span><br><span class="line"><span class="keyword">no</span>-appendfsync-<span class="keyword">on</span>-rewrite <span class="keyword">no</span> 在 aof rewrite 期间,是否对 aof 新记录的 append 暂缓使用文件同步策</span><br><span class="line">略,主要考虑磁盘 IO 开支和请求阻塞时间。默认为 <span class="keyword">no</span>,表示"不暂缓",新的 aof 记录仍然会被立即同步，Linux 的默认 fsync 策略是 <span class="number">30</span> 秒，如果为 yes 可能丢失 <span class="number">30</span> 秒数据，但由于 yes 性能较好而且会避免出现阻塞因此比较推荐。</span><br><span class="line">auto-aof-rewrite-percentage <span class="number">100</span> # 当 Aof <span class="keyword">log</span> 增长超过指定百分比例时，重写 <span class="keyword">log</span> file， 设置为 <span class="number">0</span> 表示不自动重写 Aof 日志，重写是为了使 aof 体积保持最小，而确保保存最完整的数据。</span><br><span class="line">auto-aof-rewrite-min-size <span class="number">64</span>mb #触发 aof rewrite 的最小文件大小</span><br><span class="line">aof-<span class="keyword">load</span>-truncated yes #是否加载由于其他原因导致的末尾异常的 AOF 文件(主进程被 kill/断电等)</span><br><span class="line">aof-use-rdb-preamble yes #redis4<span class="number">.0</span> 新增 RDB-AOF 混合持久化格式，在开启了这个功能之后，AOF 重写产生的文件将同时包含 RDB 格式的内容和 AOF 格式的内容，其中 RDB 格式的内容用于记录已有的数据，而 AOF 格式的内存则用于记录最近发生了变化的数据，这样 Redis 就可以同时兼有 RDB 持久化和AOF 持久化的优点（既能够快速地生成重写文件，也能够在出现问题时，快速地载入数据）。</span><br><span class="line">lua-<span class="type">time</span>-<span class="keyword">limit</span> <span class="number">5000</span> #lua 脚本的最大执行时间，单位为毫秒</span><br><span class="line"><span class="keyword">cluster</span>-enabled yes #是否开启集群模式，默认是单机模式</span><br><span class="line"><span class="keyword">cluster</span>-config-file nodes<span class="number">-6379.</span>conf #由 node 节点自动生成的集群配置文件</span><br><span class="line"><span class="keyword">cluster</span>-node-timeout <span class="number">15000</span> #集群中 node 节点连接超时时间</span><br><span class="line"><span class="keyword">cluster</span>-<span class="keyword">replica</span>-validity-factor <span class="number">10</span> #在执行故障转移的时候可能有些节点和 master 断开一段时间数据比较旧，这些节点就不适用于选举为 master，超过这个时间的就不会被进行故障转移</span><br><span class="line"><span class="keyword">cluster</span>-migration-barrier <span class="number">1</span> #一个主节点拥有的至少正常工作的从节点，即如果主节点的 slave 节点故障后会将多余的从节点分配到当前主节点成为其新的从节点。</span><br><span class="line"><span class="keyword">cluster</span>-require-<span class="keyword">full</span>-coverage <span class="keyword">no</span> #集群槽位覆盖，如果一个主库宕机且没有备库就会出现集群槽位不全，那么 yes 情况下 redis 集群槽位验证不全就不再对外提供服务，而 <span class="keyword">no</span> 则可以继续使用但是会出现查询数据查不到的情况(因为有数据丢失)。</span><br><span class="line"><span class="meta">#Slow log 是 Redis 用来记录查询执行时间的日志系统，slow log 保存在内存里面，读写速度非常快，因此你可以放心地使用它，不必担心因为开启 slow log 而损害 Redis 的速度。</span></span><br><span class="line">slowlog-<span class="keyword">log</span>-slower-than <span class="number">10000</span> #以微秒为单位的慢日志记录，为负数会禁用慢日志，为 <span class="number">0</span> 会记录每个命令操作。</span><br><span class="line">slowlog-max-len <span class="number">128</span> #记录多少条慢日志保存在队列，超出后会删除最早的，以此滚动删除</span><br><span class="line"><span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">6379</span>&gt; slowlog len</span><br><span class="line">(<span class="type">integer</span>) <span class="number">14</span></span><br><span class="line"><span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">6379</span>&gt; slowlog <span class="keyword">get</span></span><br><span class="line"><span class="number">1</span>) <span class="number">1</span>) (<span class="type">integer</span>) <span class="number">14</span></span><br><span class="line"><span class="number">2</span>) (<span class="type">integer</span>) <span class="number">1544690617</span></span><br><span class="line"><span class="number">3</span>) (<span class="type">integer</span>) <span class="number">4</span></span><br><span class="line"><span class="number">4</span>) <span class="number">1</span>) "slowlog"</span><br><span class="line"><span class="number">127.0</span><span class="number">.0</span><span class="number">.1</span>:<span class="number">6379</span>&gt; SLOWLOG <span class="keyword">reset</span></span><br><span class="line">OK</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/redis/" <i class="fa fa-tag"></i>redis</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/09/redis/redis%E6%8C%81%E4%B9%85%E5%8C%96%E6%A8%A1%E5%BC%8F/" rel="prev" title="redis持久化模式">
+      <i class="fa fa-chevron-left"></i> redis持久化模式
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/09/redis/%E4%B8%80%E9%94%AE%E5%AE%89%E8%A3%85redis/" rel="next" title="一键安装redis">
+      一键安装redis <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

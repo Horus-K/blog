@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="1 安装包和配置服务123root:~# yum install cobbler  dhcp -yroot:~# systemctl enable tftp dhcpd httpd cobblerdroot:~# systemctl start tftp  httpd cobblerd">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用cobbler实现系统自动化安装及web管理">
+<meta property="og:url" content="http://yoursite.com/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="1 安装包和配置服务123root:~# yum install cobbler  dhcp -yroot:~# systemctl enable tftp dhcpd httpd cobblerdroot:~# systemctl start tftp  httpd cobblerd">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/171c4c03f3c561ec2574d7c0e77da0c0.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/5dde38f4722f98adb718806a21f6dd71.png">
+<meta property="article:published_time" content="2020-03-10T08:40:10.000Z">
+<meta property="article:modified_time" content="2020-03-10T09:37:42.466Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="cobbler">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/171c4c03f3c561ec2574d7c0e77da0c0.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>利用cobbler实现系统自动化安装及web管理 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          利用cobbler实现系统自动化安装及web管理
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-03-10 16:40:10 / 修改时间：17:37:42" itemprop="dateCreated datePublished" datetime="2020-03-10T16:40:10+08:00">2020-03-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E8%87%AA%E5%8A%A8%E5%8C%96/" itemprop="url" rel="index">
+                    <span itemprop="name">自动化</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="1-安装包和配置服务"><a href="#1-安装包和配置服务" class="headerlink" title="1 安装包和配置服务"></a>1 安装包和配置服务</h2><figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="symbol">root:</span>~<span class="meta"># yum install cobbler  dhcp -y</span></span><br><span class="line"><span class="symbol">root:</span>~<span class="meta"># systemctl enable tftp dhcpd httpd cobblerd</span></span><br><span class="line"><span class="symbol">root:</span>~<span class="meta"># systemctl start tftp  httpd cobblerd</span></span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<h2 id="2-修改cobbler-配置文件"><a href="#2-修改cobbler-配置文件" class="headerlink" title="2 修改cobbler 配置文件"></a>2 修改cobbler 配置文件</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/cobbler/settings</span><br><span class="line">server: cobblerIP  384</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/171c4c03f3c561ec2574d7c0e77da0c0.png" alt="img"><br>““`<br>next_server: cobblerIP 272</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![](https:<span class="regexp">//</span>s1.<span class="number">51</span>cto.com<span class="regexp">/images/</span>blog<span class="regexp">/201904/</span><span class="number">19</span><span class="regexp">/290dc61ee65de2a2697d5d040478a78f.png?x-oss-process=image/</span>watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)</span><br></pre></td></tr></table></figure>
+
+<p>default_password_crypted: “$1$VBqc7U0W$F2qhI5oZwR8chJBU.mAly1” 101</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![](https:<span class="regexp">//</span>s1.<span class="number">51</span>cto.com<span class="regexp">/images/</span>blog<span class="regexp">/201904/</span><span class="number">19</span><span class="regexp">/90833ca45103ddd0246c9b3e7521dbda.png?x-oss-process=image/</span>watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)</span><br></pre></td></tr></table></figure>
+
+<p>manage_dhcp: 1 242 #可自动配置dhcp</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">![](https:<span class="regexp">//</span>s1.<span class="number">51</span>cto.com<span class="regexp">/images/</span>blog<span class="regexp">/201904/</span><span class="number">19</span><span class="regexp">/28a8f123de629a645fa9668e9f0c6c06.png?x-oss-process=image/</span>watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)</span><br></pre></td></tr></table></figure>
+
+<p>root:<del># cobbler get-loaders<br>task started: 2019-04-19_074328_get_loaders<br>task started (id=Download Bootloader Content, time=Fri Apr 19 07:43:28 2019)<br>downloading <a href="https://cobbler.github.io/loaders/README" target="_blank" rel="noopener">https://cobbler.github.io/loaders/README</a> to /var/lib/cobbler/loaders/README<br>downloading <a href="https://cobbler.github.io/loaders/COPYING.elilo" target="_blank" rel="noopener">https://cobbler.github.io/loaders/COPYING.elilo</a> to /var/lib/cobbler/loaders/COPYING.elilo<br>downloading <a href="https://cobbler.github.io/loaders/COPYING.yaboot" target="_blank" rel="noopener">https://cobbler.github.io/loaders/COPYING.yaboot</a> to /var/lib/cobbler/loaders/COPYING.yaboot<br>downloading <a href="https://cobbler.github.io/loaders/COPYING.syslinux" target="_blank" rel="noopener">https://cobbler.github.io/loaders/COPYING.syslinux</a> to /var/lib/cobbler/loaders/COPYING.syslinux<br>downloading <a href="https://cobbler.github.io/loaders/elilo-3.8-ia64.efi" target="_blank" rel="noopener">https://cobbler.github.io/loaders/elilo-3.8-ia64.efi</a> to /var/lib/cobbler/loaders/elilo-ia64.efi<br>downloading <a href="https://cobbler.github.io/loaders/yaboot-1.3.17" target="_blank" rel="noopener">https://cobbler.github.io/loaders/yaboot-1.3.17</a> to /var/lib/cobbler/loaders/yaboot<br>downloading <a href="https://cobbler.github.io/loaders/pxelinux.0-3.86" target="_blank" rel="noopener">https://cobbler.github.io/loaders/pxelinux.0-3.86</a> to /var/lib/cobbler/loaders/pxelinux.0<br>downloading <a href="https://cobbler.github.io/loaders/menu.c32-3.86" target="_blank" rel="noopener">https://cobbler.github.io/loaders/menu.c32-3.86</a> to /var/lib/cobbler/loaders/menu.c32<br>downloading <a href="https://cobbler.github.io/loaders/grub-0.97-x86.efi" target="_blank" rel="noopener">https://cobbler.github.io/loaders/grub-0.97-x86.efi</a> to /var/lib/cobbler/loaders/grub-x86.efi<br>downloading <a href="https://cobbler.github.io/loaders/grub-0.97-x86_64.efi" target="_blank" rel="noopener">https://cobbler.github.io/loaders/grub-0.97-x86_64.efi</a> to /var/lib/cobbler/loaders/grub-x86_64.efi<br><strong>* TASK COMPLETE *</strong><br>root:</del># cobbler sync<br>task started: 2019-04-19_074450_sync</p>
+<hr>
+<p>!!! TASK FAILED !!!</p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">## <span class="number">3</span> 配置dhcp服务</span><br></pre></td></tr></table></figure>
+
+<p>root:~# vim /etc/cobbler/dhcp.template<br>subnet 192.168.64.0 netmask 255.255.255.0 {<br>option routers 192.168.64.254;<br>option domain-name-servers 1.1.1.1;<br>option subnet-mask 255.255.255.0;<br>range dynamic-bootp 192.168.64.100 192.168.64.254</p>
+<p>root:~# cobbler sync<br>task started: 2019-04-19_075613_sync<br>task started (id=Sync, time=Fri Apr 19 07:56:13 2019)<br>running pre-sync triggers<br>…………………………….<br>running shell triggers from /var/lib/cobbler/triggers/change/*<br><strong>* TASK COMPLETE *</strong><br>““</p>
+<h2 id="4导入安装源文件"><a href="#4导入安装源文件" class="headerlink" title="4导入安装源文件"></a>4导入安装源文件</h2><h3 id="将光盘挂载好"><a href="#将光盘挂载好" class="headerlink" title="将光盘挂载好"></a>将光盘挂载好</h3><blockquote>
+<p>root:~# df<br>Filesystem 1K-blocks Used Available Use% Mounted on<br>/dev/mapper/centos-root 52403200 2066756 50336444 4% /<br>devtmpfs 919432 0 919432 0% /dev<br>tmpfs 931612 0 931612 0% /dev/shm<br>tmpfs 931612 9744 921868 2% /run<br>tmpfs 931612 0 931612 0% /sys/fs/cgroup<br>/dev/sda1 1038336 149004 889332 15% /boot<br>/dev/mapper/centos-home 154057220 33100 154024120 1% /home<br>tmpfs 186324 0 186324 0% /run/user/0<br>/dev/sr0 10491772 10491772 0 100% /mnt/7<br>/dev/sr1 3897932 3897932 0 100% /mnt/6</p>
+</blockquote>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">root:~# cobbler <span class="keyword">import</span> --path=/mnt/<span class="number">6</span> --name=Centos<span class="number">-6.10</span> --arch=x86_64</span><br><span class="line">task started: <span class="number">2019</span><span class="number">-04</span><span class="number">-19</span>_080352_import</span><br><span class="line">task started (id=Media <span class="keyword">import</span>, time=Fri Apr <span class="number">19</span> <span class="number">08</span>:<span class="number">03</span>:<span class="number">52</span> <span class="number">2019</span>)</span><br><span class="line">Found a candidate signature: breed=redhat, version=rhel6</span><br><span class="line">Found a matching signature: breed=redhat, version=rhel6</span><br><span class="line">Adding distros <span class="keyword">from</span> path /var/www/cobbler/ks_mirror/Centos<span class="number">-6.10</span>-x86_64:</span><br><span class="line">creating new distro: Centos<span class="number">-6.10</span>-x86_64</span><br><span class="line">trying symlink: /var/www/cobbler/ks_mirror/Centos<span class="number">-6.10</span>-x86_64 -&gt; /var/www/cobbler/links/Centos<span class="number">-6.10</span>-x86_64</span><br><span class="line">creating new profile: Centos<span class="number">-6.10</span>-x86_64</span><br><span class="line">associating repos</span><br><span class="line">checking <span class="keyword">for</span> rsync repo(s)</span><br><span class="line">checking <span class="keyword">for</span> rhn repo(s)</span><br><span class="line">checking <span class="keyword">for</span> yum repo(s)</span><br><span class="line">starting descent <span class="built_in">int</span>o /var/www/cobbler/ks_mirror/Centos<span class="number">-6.10</span>-x86_64 <span class="keyword">for</span> Centos<span class="number">-6.10</span>-x86_64</span><br><span class="line">processing repo at : /var/www/cobbler/ks_mirror/Centos<span class="number">-6.10</span>-x86_64</span><br><span class="line">need to process repo/comps: /var/www/cobbler/ks_mirror/Centos<span class="number">-6.10</span>-x86_64</span><br><span class="line">looking <span class="keyword">for</span> /var/www/cobbler/ks_mirror/Centos<span class="number">-6.10</span>-x86_64/repodata<span class="comment">/*comps*.xml</span></span><br><span class="line"><span class="comment">Keeping repodata as-is :/var/www/cobbler/ks_mirror/Centos-6.10-x86_64/repodata</span></span><br><span class="line"><span class="comment">*** TASK COMPLETE ***</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="查看现有安装选项"><a href="#查看现有安装选项" class="headerlink" title="查看现有安装选项"></a>查看现有安装选项</h3><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">root</span>:<span class="string">~# cobbler profile list</span></span><br><span class="line">   <span class="attr">Centos-6.10-x86_64</span></span><br><span class="line"><span class="meta">[root@localhost</span> <span class="string">~]# cobbler distro list  #安装原文件名称</span></span><br><span class="line"><span class="meta">[root@localhost</span> <span class="string">~]# cat /var/lib/tftpboot/pxelinux.cfg/default </span></span><br><span class="line"><span class="attr">DEFAULT</span> <span class="string">menu</span></span><br><span class="line"><span class="attr">PROMPT</span> <span class="string">0</span></span><br><span class="line"><span class="attr">MENU</span> <span class="string">TITLE Cobbler | http://cobbler.github.io/</span></span><br><span class="line"><span class="attr">TIMEOUT</span> <span class="string">200</span></span><br><span class="line"><span class="attr">TOTALTIMEOUT</span> <span class="string">6000</span></span><br><span class="line"><span class="attr">ONTIMEOUT</span> <span class="string">local</span></span><br><span class="line"></span><br><span class="line"><span class="attr">LABEL</span> <span class="string">local</span></span><br><span class="line">        <span class="attr">MENU</span> <span class="string">LABEL (local)</span></span><br><span class="line">        <span class="attr">MENU</span> <span class="string">DEFAULT</span></span><br><span class="line">        <span class="attr">LOCALBOOT</span> <span class="string">-1</span></span><br><span class="line"></span><br><span class="line"><span class="attr">LABEL</span> <span class="string">Centos-6.10-x86_64</span></span><br><span class="line">        <span class="attr">kernel</span> <span class="string">/images/Centos-6.10-x86_64/vmlinuz</span></span><br><span class="line">        <span class="attr">MENU</span> <span class="string">LABEL Centos-6.10-x86_64</span></span><br><span class="line">        <span class="attr">append</span> <span class="string">initrd=/images/Centos-6.10-x86_64/initrd.img ksdevice=bootif lang=  kssendmac text  ks=http://192.168.64.131/cblr/svc/op/ks/profile/Centos-6.10-x86_64</span></span><br><span class="line">        <span class="attr">ipappend</span> <span class="string">2</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="attr">MENU</span> <span class="string">end</span></span><br><span class="line"><span class="attr">cobbler</span> <span class="string">profile remove --name=NAME</span></span><br><span class="line"><span class="attr">cobbler</span> <span class="string">distro remove --name=NAME</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="现在已经可以自动化安装了，不过cobbler默认配置文件为最小化安装，想要自定义的花要修改配置文件"><a href="#现在已经可以自动化安装了，不过cobbler默认配置文件为最小化安装，想要自定义的花要修改配置文件" class="headerlink" title="现在已经可以自动化安装了，不过cobbler默认配置文件为最小化安装，想要自定义的花要修改配置文件"></a>现在已经可以自动化安装了，不过cobbler默认配置文件为最小化安装，想要自定义的花要修改配置文件</h3><h3 id="Centos-7-0下使用system-config-kickstart"><a href="#Centos-7-0下使用system-config-kickstart" class="headerlink" title="Centos 7.0下使用system-config-kickstart"></a>Centos 7.0下使用system-config-kickstart</h3><figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">修改CentOS-Base.repo</span><br><span class="line"></span><br><span class="line">[base]                     修改 ----------&gt;[development]  </span><br><span class="line">name=CentOS-$releasever - Base</span><br><span class="line">root:~# yum install -y <span class="keyword">system</span>-config-kickstart.noarch</span><br><span class="line">root:~  # env LANG=zh_CN.UTF<span class="number">-8</span> <span class="keyword">system</span>-config-kickstart #生成自定义配置文件</span><br></pre></td></tr></table></figure>
+
+<h2 id="将ks文件和系统关联，生成启动菜单"><a href="#将ks文件和系统关联，生成启动菜单" class="headerlink" title="将ks文件和系统关联，生成启动菜单"></a>将ks文件和系统关联，生成启动菜单</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cobbler<span class="built_in"> profile </span><span class="builtin-name">add</span> <span class="attribute">--name</span>=Centos6_mini <span class="attribute">--distro</span>=Centos-6.10-x86_64 <span class="attribute">--kickstart</span>=/var/lib/cobbler/kickstarts/ks6mini.cfg</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E5%88%A9%E7%94%A8cobbler%E5%AE%9E%E7%8E%B0%E7%B3%BB%E7%BB%9F%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E5%8F%8Aweb%E7%AE%A1%E7%90%86/5dde38f4722f98adb718806a21f6dd71.png" alt="img"></p>
+<h3 id="将所有选项选完即可左上角保存"><a href="#将所有选项选完即可左上角保存" class="headerlink" title="将所有选项选完即可左上角保存"></a>将所有选项选完即可左上角保存</h3><h3 id="centos6ks文件"><a href="#centos6ks文件" class="headerlink" title="centos6ks文件"></a>centos6ks文件</h3><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#platform=x86, AMD64, or Intel EM64T</span></span><br><span class="line"><span class="comment">#version=DEVEL</span></span><br><span class="line"><span class="comment"># Firewall configuration</span></span><br><span class="line">firewall <span class="params">--disabled</span></span><br><span class="line"><span class="comment"># Install OS instead of upgrade</span></span><br><span class="line">install</span><br><span class="line"><span class="comment"># Use CDROM installation media</span></span><br><span class="line">url <span class="params">--url=</span>$tree</span><br><span class="line"><span class="comment"># Root password</span></span><br><span class="line">rootpw <span class="params">--iscrypted</span> $1$RR1QsW0t$qYYwsKO5LloO6y3WaTkdj0</span><br><span class="line"><span class="comment"># System authorization information</span></span><br><span class="line">auth  <span class="params">--useshadow</span>  <span class="params">--passalgo=sha512</span></span><br><span class="line"><span class="comment"># Use text mode install</span></span><br><span class="line">text</span><br><span class="line"><span class="comment"># System keyboard</span></span><br><span class="line">keyboard us</span><br><span class="line"><span class="comment"># System language</span></span><br><span class="line">lang en_US</span><br><span class="line"><span class="comment"># SELinux configuration</span></span><br><span class="line">selinux <span class="params">--disabled</span></span><br><span class="line"><span class="comment"># Do not configure the X Window System</span></span><br><span class="line">skipx</span><br><span class="line"><span class="comment"># Installation logging level</span></span><br><span class="line">logging <span class="params">--level=info</span></span><br><span class="line"><span class="comment"># Reboot after installation</span></span><br><span class="line">reboot</span><br><span class="line"><span class="comment"># System timezone</span></span><br><span class="line">timezone  Asia/Shanghai</span><br><span class="line"><span class="comment"># Network information</span></span><br><span class="line">network  <span class="params">--bootproto=dhcp</span> <span class="params">--device=eth0</span> <span class="params">--onboot=on</span></span><br><span class="line"><span class="comment"># System bootloader configuration</span></span><br><span class="line">bootloader <span class="params">--location=mbr</span> <span class="params">--md5pass=</span><span class="string">"$1$EmYezDTP$mBxhDFd/BRDIn6ZBAOtL00"</span></span><br><span class="line"><span class="comment"># Clear the Master Boot Record</span></span><br><span class="line">zerombr</span><br><span class="line"><span class="comment"># Partition clearing information</span></span><br><span class="line">clearpart <span class="params">--all</span> <span class="params">--initlabel</span> </span><br><span class="line"><span class="comment"># Disk partitioning information</span></span><br><span class="line">part <span class="string">/boot</span> <span class="params">--fstype=</span><span class="string">"ext4"</span> <span class="params">--size=1024</span></span><br><span class="line">part / <span class="params">--fstype=</span><span class="string">"ext4"</span> <span class="params">--grow</span> <span class="params">--size=1</span></span><br><span class="line"></span><br><span class="line">%post</span><br><span class="line">mkdir <span class="string">/root/.ssh</span></span><br><span class="line">chmod 700 <span class="string">/root/.ssh</span></span><br><span class="line">cat &gt; <span class="string">/root/.ssh/authorized_keys</span> &lt;&lt;EOF</span><br><span class="line">ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAtSEz3OSOAI6UMkRjIVk3cXwVf/tYa9YsBOVd4vamGtrAuPN5+zgOj9T9p+QI0nJHva6LR4Wz5es46zXoSrLoKY4rTpqnmuPNYuG3B/cybOv99+hriq7Vs9/OqMIgsLbtk4R99Rg75wL9jXpcyxgKtCyVYG4sjdlfyQXQXuauzai6u9oqKo7MmDyWiC9QJSqfilrQKhUB+OfVo4/vkYxKLsRy8N6k2BoRTk2VIp7XKB4gr3sutgutXk35A3O08ukGBSA+378G2csDmf9nctGv4kSw/gR6Mdy2LnhcxcnPA5IP39Buvkdp2eqXOnY1zWxTiUdLtfAb81rFpwMudtaK1w== rsa 2048-041619</span><br><span class="line">EOF</span><br><span class="line">chmod 600 <span class="string">/root/.ssh/authorized_keys</span></span><br><span class="line">systemctl stop firewalld</span><br><span class="line">systemctl disable firewalld.service</span><br><span class="line">systemctl stop NetworkManager</span><br><span class="line">systemctl disable NetworkManager</span><br><span class="line">%end</span><br><span class="line"></span><br><span class="line">%packages</span><br><span class="line">@base</span><br><span class="line">@debugging</span><br><span class="line">@network-tools</span><br><span class="line"></span><br><span class="line">%end</span><br></pre></td></tr></table></figure>
+
+<h2 id="centos7ks文件"><a href="#centos7ks文件" class="headerlink" title="centos7ks文件"></a>centos7ks文件</h2><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#platform=x86, AMD64, or Intel EM64T</span></span><br><span class="line"><span class="comment">#version=DEVEL</span></span><br><span class="line"><span class="comment"># Install OS instead of upgrade</span></span><br><span class="line"><span class="attr">install</span></span><br><span class="line"><span class="comment"># Keyboard layouts</span></span><br><span class="line"><span class="attr">keyboard</span> <span class="string">'us'</span></span><br><span class="line"><span class="comment"># Root password</span></span><br><span class="line"><span class="attr">rootpw</span> <span class="string">--iscrypted $1$F4q00dyi$IQ1/CLubGYHtDw6EvSiln0</span></span><br><span class="line"><span class="comment"># System language</span></span><br><span class="line"><span class="attr">lang</span> <span class="string">en_US</span></span><br><span class="line"><span class="comment"># System authorization information</span></span><br><span class="line"><span class="attr">auth</span>  <span class="string">--useshadow  --passalgo=sha512</span></span><br><span class="line"><span class="comment"># Use CDROM installation media</span></span><br><span class="line"><span class="attr">url</span> <span class="string">--url=$tree</span></span><br><span class="line"><span class="comment"># Use graphical install</span></span><br><span class="line"><span class="attr">text</span></span><br><span class="line"><span class="comment"># SELinux configuration</span></span><br><span class="line"><span class="attr">selinux</span> <span class="string">--disabled</span></span><br><span class="line"><span class="comment"># Do not configure the X Window System</span></span><br><span class="line"><span class="attr">skipx</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Firewall configuration</span></span><br><span class="line"><span class="attr">firewall</span> <span class="string">--disabled</span></span><br><span class="line"><span class="comment"># Network information</span></span><br><span class="line"><span class="attr">network</span>  <span class="string">--bootproto=dhcp --device=ens33</span></span><br><span class="line"><span class="comment"># Halt after installation</span></span><br><span class="line"><span class="attr">halt</span></span><br><span class="line"><span class="comment"># System timezone</span></span><br><span class="line"><span class="attr">timezone</span> <span class="string">Asia/Shanghai</span></span><br><span class="line"><span class="comment"># System bootloader configuration</span></span><br><span class="line"><span class="attr">bootloader</span> <span class="string">--append=" crashkernel=auto" --location=mbr --boot-drive=sda</span></span><br><span class="line"><span class="comment"># Partition clearing information</span></span><br><span class="line"><span class="attr">clearpart</span> <span class="string">--all --initlabel</span></span><br><span class="line"><span class="attr">reboot</span></span><br><span class="line"><span class="comment"># Disk partitioning information</span></span><br><span class="line"><span class="attr">part</span> <span class="string">/boot --fstype="xfs" --size=1024</span></span><br><span class="line"><span class="attr">part</span> <span class="string">/ --fstype="xfs" --grow --size=1</span></span><br><span class="line"></span><br><span class="line"><span class="attr">%post</span></span><br><span class="line"><span class="attr">mkdir</span> <span class="string">/root/.ssh</span></span><br><span class="line"><span class="attr">chmod</span> <span class="string">700 /root/.ssh</span></span><br><span class="line"><span class="attr">cat</span> <span class="string">&gt; /root/.ssh/authorized_keys &lt;&lt;EOF</span></span><br><span class="line"><span class="meta">ssh-rsa</span> <span class="string">AAAAB3NzaC1yc2EAAAABIwAAAQEAtSEz3OSOAI6UMkRjIVk3cXwVf/tYa9YsBOVd4vamGtrAuPN5+zgOj9T9p+QI0nJHva6LR4Wz5es46zXoSrLoKY4rTpqnmuPNYuG3B/cybOv99+hriq7Vs9/OqMIgsLbtk4R99Rg75wL9jXpcyxgKtCyVYG4sjdlfyQXQXuauzai6u9oqKo7MmDyWiC9QJSqfilrQKhUB+OfVo4/vkYxKLsRy8N6k2BoRTk2VIp7XKB4gr3sutgutXk35A3O08ukGBSA+378G2csDmf9nctGv4kSw/gR6Mdy2LnhcxcnPA5IP39Buvkdp2eqXOnY1zWxTiUdLtfAb81rFpwMudtaK1w== rsa 2048-041619</span></span><br><span class="line"><span class="attr">EOF</span></span><br><span class="line"><span class="attr">chmod</span> <span class="string">600 /root/.ssh/authorized_keys</span></span><br><span class="line"><span class="attr">systemctl</span> <span class="string">stop firewalld</span></span><br><span class="line"><span class="attr">systemctl</span> <span class="string">disable firewalld.service</span></span><br><span class="line"><span class="attr">systemctl</span> <span class="string">stop NetworkManager</span></span><br><span class="line"><span class="attr">systemctl</span> <span class="string">disable NetworkManager</span></span><br><span class="line"><span class="attr">sed</span> <span class="string">-i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config</span></span><br><span class="line"><span class="attr">mkdir</span> <span class="string">/etc/yum.repo.d/bak</span></span><br><span class="line"><span class="attr">mv</span> <span class="string">/etc/yum.repos.d/*.repo /etc/yum.repos.d/bak/</span></span><br><span class="line"><span class="attr">cat</span> <span class="string">&gt; /etc/yum.repos.d/Centos-Base.repo &lt;&lt;EOF</span></span><br><span class="line"><span class="attr">[development]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">CentOS-$releasever - Base - mirrors.aliyun.com</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/centos/$releasever/os/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.aliyuncs.com/centos/$releasever/os/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.cloud.aliyuncs.com/centos/$releasever/os/$basearch/</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">http://mirrors.aliyun.com/centos/RPM-GPG-KEY-CentOS-7</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#released updates </span></span><br><span class="line"><span class="attr">[updates]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">CentOS-$releasever - Updates - mirrors.aliyun.com</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/centos/$releasever/updates/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.aliyuncs.com/centos/$releasever/updates/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.cloud.aliyuncs.com/centos/$releasever/updates/$basearch/</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">http://mirrors.aliyun.com/centos/RPM-GPG-KEY-CentOS-7</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#additional packages that may be useful</span></span><br><span class="line"><span class="attr">[extras]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">CentOS-$releasever - Extras - mirrors.aliyun.com</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/centos/$releasever/extras/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.aliyuncs.com/centos/$releasever/extras/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.cloud.aliyuncs.com/centos/$releasever/extras/$basearch/</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">http://mirrors.aliyun.com/centos/RPM-GPG-KEY-CentOS-7</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#additional packages that extend functionality of existing packages</span></span><br><span class="line"><span class="attr">[centosplus]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">CentOS-$releasever - Plus - mirrors.aliyun.com</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/centos/$releasever/centosplus/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.aliyuncs.com/centos/$releasever/centosplus/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.cloud.aliyuncs.com/centos/$releasever/centosplus/$basearch/</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">enabled</span>=<span class="string">0</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">http://mirrors.aliyun.com/centos/RPM-GPG-KEY-CentOS-7</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#contrib - packages by Centos Users</span></span><br><span class="line"><span class="attr">[contrib]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">CentOS-$releasever - Contrib - mirrors.aliyun.com</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/centos/$releasever/contrib/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.aliyuncs.com/centos/$releasever/contrib/$basearch/</span></span><br><span class="line">        <span class="attr">http</span>:<span class="string">//mirrors.cloud.aliyuncs.com/centos/$releasever/contrib/$basearch/</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">enabled</span>=<span class="string">0</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">http://mirrors.aliyun.com/centos/RPM-GPG-KEY-CentOS-7</span></span><br><span class="line"><span class="attr">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="attr">cat</span> <span class="string">&gt; /etc/yum.repos.d/epel.repo &lt;&lt; EOF</span></span><br><span class="line"><span class="attr">[epel]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">Extra Packages for Enterprise Linux 7 - $basearch</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/epel/7/$basearch</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">enabled</span>=<span class="string">1</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">0</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7</span></span><br><span class="line"></span><br><span class="line"><span class="attr">[epel-debuginfo]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">Extra Packages for Enterprise Linux 7 - $basearch - Debug</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/epel/7/$basearch/debug</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">enabled</span>=<span class="string">0</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">0</span></span><br><span class="line"></span><br><span class="line"><span class="attr">[epel-source]</span></span><br><span class="line"><span class="attr">name</span>=<span class="string">Extra Packages for Enterprise Linux 7 - $basearch - Source</span></span><br><span class="line"><span class="attr">baseurl</span>=<span class="string">http://mirrors.aliyun.com/epel/7/SRPMS</span></span><br><span class="line"><span class="attr">failovermethod</span>=<span class="string">priority</span></span><br><span class="line"><span class="attr">enabled</span>=<span class="string">0</span></span><br><span class="line"><span class="attr">gpgkey</span>=<span class="string">file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7</span></span><br><span class="line"><span class="attr">gpgcheck</span>=<span class="string">0</span></span><br><span class="line"><span class="attr">EOF</span></span><br><span class="line"><span class="attr">%end</span></span><br><span class="line"></span><br><span class="line"><span class="attr">%packages</span></span><br><span class="line"><span class="attr">@base</span></span><br><span class="line"><span class="attr">@network-tools</span></span><br><span class="line"></span><br><span class="line"><span class="attr">%end</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="web管理"><a href="#web管理" class="headerlink" title="web管理"></a>web管理</h2><h3 id="阿里云太新会出错，用搜狐"><a href="#阿里云太新会出错，用搜狐" class="headerlink" title="阿里云太新会出错，用搜狐"></a>阿里云太新会出错，用搜狐</h3><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/yum.repos.d/epel.repo</span><br><span class="line">[epel]</span><br><span class="line"><span class="attribute">name</span>=Extra Packages <span class="keyword">for</span> Enterprise Linux 7 - <span class="variable">$basearch</span></span><br><span class="line"><span class="attribute">baseurl</span>=http://mirrors.sohu.com/fedora-epel/7/x86_64/</span><br><span class="line"><span class="attribute">enabled</span>=1</span><br><span class="line"><span class="attribute">gpgcheck</span>=0</span><br><span class="line">[root@localhost ~]# yum clean all</span><br><span class="line">[root@localhost network-scripts]# yum install cobbler-web</span><br><span class="line">[root@localhost network-scripts]#<span class="built_in"> service </span>httpd restart</span><br><span class="line">[root@localhost network-scripts]# htdigest /etc/cobbler/users.digest Cobbler cobbleradmin(添加新管理用户)</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/cobbler/" <i class="fa fa-tag"></i>cobbler</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/10/%E8%87%AA%E5%8A%A8%E5%8C%96/%E6%90%AD%E5%BB%BAPXE%E6%97%A0%E4%BA%BA%E5%80%BC%E5%AE%88%E8%87%AA%E5%8A%A8%E5%8C%96%E5%AE%89%E8%A3%85%E7%B3%BB%E7%BB%9F%EF%BC%8C%E6%94%AF%E6%8C%81%E5%A4%9A%E7%B3%BB%E7%BB%9F/" rel="prev" title="搭建PXE无人值守自动化安装系统，支持多系统">
+      <i class="fa fa-chevron-left"></i> 搭建PXE无人值守自动化安装系统，支持多系统
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/10/Linux/CA%E5%92%8C%E8%AF%81%E4%B9%A6/" rel="next" title="CA和证书">
+      CA和证书 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-安装包和配置服务"><span class="nav-number">1.</span> <span class="nav-text">1 安装包和配置服务</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-修改cobbler-配置文件"><span class="nav-number">2.</span> <span class="nav-text">2 修改cobbler 配置文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4导入安装源文件"><span class="nav-number">3.</span> <span class="nav-text">4导入安装源文件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#将光盘挂载好"><span class="nav-number">3.1.</span> <span class="nav-text">将光盘挂载好</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#查看现有安装选项"><span class="nav-number">3.2.</span> <span class="nav-text">查看现有安装选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#现在已经可以自动化安装了，不过cobbler默认配置文件为最小化安装，想要自定义的花要修改配置文件"><span class="nav-number">3.3.</span> <span class="nav-text">现在已经可以自动化安装了，不过cobbler默认配置文件为最小化安装，想要自定义的花要修改配置文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Centos-7-0下使用system-config-kickstart"><span class="nav-number">3.4.</span> <span class="nav-text">Centos 7.0下使用system-config-kickstart</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#将ks文件和系统关联，生成启动菜单"><span class="nav-number">4.</span> <span class="nav-text">将ks文件和系统关联，生成启动菜单</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#将所有选项选完即可左上角保存"><span class="nav-number">4.1.</span> <span class="nav-text">将所有选项选完即可左上角保存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#centos6ks文件"><span class="nav-number">4.2.</span> <span class="nav-text">centos6ks文件</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#centos7ks文件"><span class="nav-number">5.</span> <span class="nav-text">centos7ks文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#web管理"><span class="nav-number">6.</span> <span class="nav-text">web管理</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#阿里云太新会出错，用搜狐"><span class="nav-number">6.1.</span> <span class="nav-text">阿里云太新会出错，用搜狐</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="在拓扑结构中，ProxySQL部署在应用程序和MySQL集群的中间位置。应用程序向ProxySQL发起SQL语句，ProxySQL分析收到的SQL语句，进行匹配、重写等操作，然后路由给后端MySQL集群中的某实例。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mysql中间件应用之使用ProxySQL进行数据库读写分离">
+<meta property="og:url" content="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="在拓扑结构中，ProxySQL部署在应用程序和MySQL集群的中间位置。应用程序向ProxySQL发起SQL语句，ProxySQL分析收到的SQL语句，进行匹配、重写等操作，然后路由给后端MySQL集群中的某实例。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/1db967bc51a727153f30d2fb91f78397.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/3bd4fa3256706b3af6d59485e157432f.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/9a2f996fd479bbf444e5860769225b92.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/fbc2d55726d618c2f729ba16c60527be.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/a98d0b110e39f739d50faafb8944f747.png">
+<meta property="article:published_time" content="2020-03-10T06:53:54.000Z">
+<meta property="article:modified_time" content="2020-03-10T09:44:12.575Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="mysql">
+<meta property="article:tag" content="proxySQL">
+<meta property="article:tag" content="读写分离">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/1db967bc51a727153f30d2fb91f78397.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Mysql中间件应用之使用ProxySQL进行数据库读写分离 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Mysql中间件应用之使用ProxySQL进行数据库读写分离
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-03-10 14:53:54 / 修改时间：17:44:12" itemprop="dateCreated datePublished" datetime="2020-03-10T14:53:54+08:00">2020-03-10</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/mysql/" itemprop="url" rel="index">
+                    <span itemprop="name">mysql</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li>在拓扑结构中，ProxySQL部署在应用程序和MySQL集群的中间位置。应用程序向ProxySQL发起SQL语句，ProxySQL分析收到的SQL语句，进行匹配、重写等操作，然后路由给后端MySQL集群中的某实例。</li>
+</ul>
+<a id="more"></a>
+
+<h3 id="各大网站自己的读写分离中间件"><a href="#各大网站自己的读写分离中间件" class="headerlink" title="各大网站自己的读写分离中间件"></a>各大网站自己的读写分离中间件</h3><p>读写分离应用：</p>
+<blockquote>
+<p>mysql-proxy：Oracle，<a href="https://downloads.mysql.com/archives/proxy/" target="_blank" rel="noopener">https://downloads.mysql.com/archives/proxy/</a><br>Atlas:Qihoo,<a href="https://github.com/Qihoo360/Atlas/blob/master/README_ZH.md" target="_blank" rel="noopener">https://github.com/Qihoo360/Atlas/blob/master/README_ZH.md</a><br>dbproxy：美团，<a href="https://github.com/Meituan-Dianping/DBProxy" target="_blank" rel="noopener">https://github.com/Meituan-Dianping/DBProxy</a><br>Cetus：网易乐得，<a href="https://github.com/Lede-Inc/cetus" target="_blank" rel="noopener">https://github.com/Lede-Inc/cetus</a><br>Amoeba：<a href="https://sourceforge.net/projects/amoeba/" target="_blank" rel="noopener">https://sourceforge.net/projects/amoeba/</a><br>Cobar：阿里巴巴，Amoeba的升级版<br>Mycat：基于Cobar， <a href="http://www.mycat.io/" target="_blank" rel="noopener">http://www.mycat.io/</a><br>ProxySQL：<a href="https://proxysql.com/" target="_blank" rel="noopener">https://proxysql.com/</a></p>
+</blockquote>
+<h3 id="这里使用ProxySQL"><a href="#这里使用ProxySQL" class="headerlink" title="这里使用ProxySQL"></a>这里使用ProxySQL</h3><ul>
+<li>两个版本：官方版和percona版，</li>
+<li>percona版是基于官方版基础上修改，C++语言开发，轻量级但性能优异(支持处理千亿级数据)</li>
+<li>具有中间件所需的绝大多数功能，包括：</li>
+</ul>
+<blockquote>
+<p>多种方式的读/写分离<br>定制基于用户、基于schema、基于语句的规则对SQL语句进行路由<br>缓存查询结果<br>后端节点监控<br>官方站点：<a href="https://proxysql.com/" target="_blank" rel="noopener">https://proxysql.com/</a><br>官方手册：<a href="https://github.com/sysown/proxysql/wiki" target="_blank" rel="noopener">https://github.com/sysown/proxysql/wiki</a></p>
+</blockquote>
+<h2 id="架构图"><a href="#架构图" class="headerlink" title="架构图"></a>架构图</h2><p><img src="/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/1db967bc51a727153f30d2fb91f78397.png" alt="img"></p>
+<h2 id="环境准备"><a href="#环境准备" class="headerlink" title="环境准备"></a>环境准备</h2><ul>
+<li><strong>实现读写分离前，先实现主从复制</strong></li>
+<li><strong>注意：slave节点需要设置read_only=1</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="left">主机</th>
+<th align="left">系统</th>
+<th align="left">ip</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">ProxySQL</td>
+<td align="left">centos7</td>
+<td align="left">192.168.64.140</td>
+</tr>
+<tr>
+<td align="left">masterr</td>
+<td align="left">centos7</td>
+<td align="left">192.168.64.142</td>
+</tr>
+<tr>
+<td align="left">slave</td>
+<td align="left">centos7</td>
+<td align="left">192.168.64.143</td>
+</tr>
+</tbody></table>
+<h3 id="1-实现142，143主从复制"><a href="#1-实现142，143主从复制" class="headerlink" title="1.实现142，143主从复制"></a>1.实现142，143主从复制</h3><ul>
+<li>142主</li>
+</ul>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">修改配置 </span><br><span class="line">vim /etc/my.cnf</span><br><span class="line"><span class="meta">[mysqld]</span></span><br><span class="line">server<span class="emphasis">_id=142                                                                                                  </span></span><br><span class="line"><span class="emphasis">binlog_</span>format=row 建议</span><br><span class="line"></span><br><span class="line">查看位置信息</span><br><span class="line">root:~ # mysql -e "show master logs;"</span><br><span class="line"><span class="code">+------------------+</span>-----------+</span><br><span class="line">| Log<span class="emphasis">_name     | File_</span>size |</span><br><span class="line"><span class="code">+------------------+</span>-----------+</span><br><span class="line">| mysql-bin.000001 |     30343   |</span><br><span class="line">| mysql-bin.000002 |   1038814 |</span><br><span class="line">| mysql-bin.000003 |       245     |</span><br><span class="line">| mysql-bin.000004 |       400     |</span><br><span class="line"><span class="code">+------------------+</span>-----------+</span><br><span class="line"></span><br><span class="line">root:~ # systemctl start mariadb.service </span><br><span class="line">root:~ # mysql -e "grant replication slave on <span class="strong">*.*</span> to repluser@<span class="emphasis">'192.168.64.%'</span> identified by <span class="emphasis">'centos'</span>;"</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>143从</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">修改配置 </span><br><span class="line">vim /etc/my.cnf</span><br><span class="line">[mysqld]</span><br><span class="line"><span class="attribute">server_id</span>=143                                                                                                      </span><br><span class="line">read_only #必须加，ProxySQL通过此来判断谁是读服务器</span><br><span class="line"></span><br><span class="line">配置同步信息</span><br><span class="line">mysql&gt;CHANGE MASTER <span class="keyword">TO</span>   </span><br><span class="line"><span class="attribute">MASTER_HOST</span>=<span class="string">'192.168.64.142'</span>,  </span><br><span class="line"><span class="attribute">MASTER_USER</span>=<span class="string">'repluser'</span>,   </span><br><span class="line"><span class="attribute">MASTER_PASSWORD</span>=<span class="string">'centos'</span>,   </span><br><span class="line"><span class="attribute">MASTER_PORT</span>=3306,   </span><br><span class="line"><span class="attribute">MASTER_LOG_FILE</span>=<span class="string">'mysql-bin.000004'</span>,   </span><br><span class="line"><span class="attribute">MASTER_LOG_POS</span>=400;</span><br><span class="line"></span><br><span class="line">启动复制thread</span><br><span class="line">mysql&gt;start slave;</span><br><span class="line">mysql&gt;show slave status\G</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>主从已搭建完毕</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">MariaDB</span> <span class="string">[(none)]&gt;</span> <span class="string">show</span> <span class="string">slave</span> <span class="string">status\G</span></span><br><span class="line"><span class="string">***************************</span> <span class="number">1</span><span class="string">.</span> <span class="string">row</span> <span class="string">***************************</span></span><br><span class="line">               <span class="attr">Slave_IO_State:</span> <span class="string">Waiting</span> <span class="string">for</span> <span class="string">master</span> <span class="string">to</span> <span class="string">send</span> <span class="string">event</span></span><br><span class="line">                  <span class="attr">Master_Host:</span> <span class="number">192.168</span><span class="number">.64</span><span class="number">.142</span></span><br><span class="line">                  <span class="attr">Master_User:</span> <span class="string">repluser</span></span><br><span class="line">                  <span class="attr">Master_Port:</span> <span class="number">3306</span></span><br><span class="line">                <span class="attr">Connect_Retry:</span> <span class="number">60</span></span><br><span class="line">              <span class="attr">Master_Log_File:</span> <span class="string">mysql-bin.000006</span></span><br><span class="line">          <span class="attr">Read_Master_Log_Pos:</span> <span class="number">245</span></span><br><span class="line">               <span class="attr">Relay_Log_File:</span> <span class="string">localhost-relay-bin.000007</span></span><br><span class="line">                <span class="attr">Relay_Log_Pos:</span> <span class="number">529</span></span><br><span class="line">        <span class="attr">Relay_Master_Log_File:</span> <span class="string">mysql-bin.000006</span></span><br><span class="line">             <span class="attr">Slave_IO_Running:</span> <span class="literal">Yes</span>       <span class="comment">#线程都已开启</span></span><br><span class="line">            <span class="attr">Slave_SQL_Running:</span> <span class="literal">Yes</span></span><br><span class="line">            <span class="string">............</span></span><br><span class="line">             <span class="attr">Master_Server_Id:</span> <span class="number">142</span></span><br><span class="line"><span class="number">1</span> <span class="string">row</span> <span class="string">in</span> <span class="string">set</span> <span class="string">(0.00</span> <span class="string">sec)</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="2-配置ProxySQL"><a href="#2-配置ProxySQL" class="headerlink" title="2.配置ProxySQL"></a>2.配置ProxySQL</h2><h3 id="1-ProxySQL安装（需yum源）"><a href="#1-ProxySQL安装（需yum源）" class="headerlink" title="1.ProxySQL安装（需yum源）"></a>1.ProxySQL安装（需yum源）</h3><figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">cat &lt;&lt;EOF | tee /etc/yum.repos.d/proxysql.repo</span><br><span class="line">[proxysql_repo]</span><br><span class="line">name= ProxySQL YUM repository</span><br><span class="line">baseurl=<span class="symbol">http:</span>/<span class="regexp">/repo.proxysql.com/</span>ProxySQL/proxysql1.<span class="number">4</span>.x/centos/\$releasever</span><br><span class="line">gpgcheck=<span class="number">1</span></span><br><span class="line">gpgkey=<span class="symbol">http:</span>/<span class="regexp">/repo.proxysql.com/</span>ProxySQL/repo_pub_key</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line"><span class="symbol">root:</span>~ <span class="comment"># yum clean all</span></span><br><span class="line"><span class="symbol">root:</span>~ <span class="comment"># yum repolist</span></span><br><span class="line">proxysql_repo/<span class="number">7</span>   ProxySQL YUM repository     <span class="number">15</span></span><br><span class="line"></span><br><span class="line"><span class="symbol">root:</span>~ <span class="comment"># yum install -y proxysql mariadb</span></span><br><span class="line"><span class="symbol">root:</span>~ <span class="comment"># rpm -ql proxysql</span></span><br><span class="line">/etc/init.d/proxysql   <span class="comment">#启动脚本</span></span><br><span class="line">/etc/proxysql.cnf  <span class="comment">#配置文件</span></span><br><span class="line">/usr/bin/proxysql  <span class="comment">#启动程序</span></span><br><span class="line">/usr/share/proxysql/tools/proxysql_galera_checker.sh</span><br><span class="line">/usr/share/proxysql/tools/proxysql_galera_writer.pl</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-配置ProxySQL-1"><a href="#2-配置ProxySQL-1" class="headerlink" title="2.配置ProxySQL"></a>2.配置ProxySQL</h3><ul>
+<li><p>数据库说明：</p>
+<blockquote>
+<p>main 是默认的”数据库”名，表里存放后端db实例、用户验证、路由规则等信息。<br>表名以 runtime_开头的表示proxysql当前运行的配置内容，不能通过dml语句修改，<br>只能修改对应的不以 runtime_ 开头的（在内存）里的表，然后 LOAD 使其生效，<br>SAVE 使其存到硬盘以供下次重启加载<br>disk 是持久化到硬盘的配置，sqlite数据文件<br>stats 是proxysql运行抓取的统计信息，包括到后端各命令的执行次数、流量、<br>processlist、查询种类汇总/执行时间，等等<br>monitor 库存储 monitor 模块收集的信息，主要是对后端db的健康/延迟检查</p>
+</blockquote>
+</li>
+<li><p>1.添加监控节点</p>
+</li>
+</ul>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">root:~ # mysql -uadmin -padmin -P6032 -h127<span class="number">.0</span><span class="number">.0</span><span class="number">.1</span>  #连接至本机ProxySQL的数据库</span><br><span class="line">MySQL [(<span class="keyword">none</span>)]&gt; <span class="keyword">insert</span> <span class="keyword">into</span> mysql_servers(hostgroup_id,hostname,port) <span class="keyword">values</span>(<span class="number">10</span>,<span class="string">'192.168.64.142'</span>,<span class="number">3306</span>);</span><br><span class="line">MySQL [(<span class="keyword">none</span>)]&gt; <span class="keyword">insert</span> <span class="keyword">into</span> mysql_servers(hostgroup_id,hostname,port) <span class="keyword">values</span>(<span class="number">10</span>,<span class="string">'192.168.64.143'</span>,<span class="number">3306</span>);</span><br><span class="line">MySQL [(<span class="keyword">none</span>)]&gt; <span class="keyword">select</span> * <span class="keyword">from</span> mysql_servers;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/3bd4fa3256706b3af6d59485e157432f.png" alt="img"><br>* 2.添加监控后端节点的用户。ProxySQL通过每个节点的read_only值来自动调整它们是属于读组还是写组</p>
+<ul>
+<li>在master142上执行</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; grant replication<span class="built_in"> client </span>on *.* <span class="keyword">to</span> monitor@<span class="string">'192.168.8.%'</span> identified by <span class="string">'centos'</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>ProxySQL上配置监控</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MySQL [(none)]&gt; <span class="builtin-name">set</span> <span class="attribute">mysql-monitor_username</span>=<span class="string">'monitor'</span>;</span><br><span class="line">MySQL [(none)]&gt; <span class="builtin-name">set</span> <span class="attribute">mysql-monitor_password</span>=<span class="string">'centos'</span>;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>加载到RUNTIME，并保存到disk</li>
+</ul>
+<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MySQL [(none)]&gt; load mysql <span class="keyword">variables</span> to <span class="comment">runtime</span>;</span><br><span class="line">MySQL [(none)]&gt; save mysql <span class="keyword">variables</span> to <span class="comment">disk</span>;</span><br></pre></td></tr></table></figure>
+
+<p>监控模块的指标保存在monitor库的log表中<br>* 查看监控连接是否正常的 (对connect指标的监控)：(如果connect_error的结果为NULL则表示正常)</p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">select</span> * <span class="keyword">from</span> mysql_server_connect_log;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>查看监控心跳信息 (对ping指标的监控)：</li>
+</ul>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">select</span> * <span class="keyword">from</span> mysql_server_ping_log;</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>查看read_only和replication_lag的监控日志</li>
+</ul>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">select</span> * <span class="keyword">from</span> mysql_server_read_only_log;</span><br><span class="line">MySQL&gt; <span class="keyword">select</span> * <span class="keyword">from</span> mysql_server_replication_lag_log;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-设置分组"><a href="#3-设置分组" class="headerlink" title="3.设置分组"></a>3.设置分组</h3><blockquote>
+<p>需要修改的是main库中的mysql_replication_hostgroups表，该表有3个字段：<br>writer_hostgroup，reader_hostgroup，comment, 指定写组的id为10，读组的id为20</p>
+</blockquote>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">insert</span> <span class="keyword">into</span> mysql_replication_hostgroups <span class="keyword">values</span>(<span class="number">10</span>,<span class="number">20</span>,"test");</span><br><span class="line">将mysql_replication_hostgroups表的修改加载到RUNTIME生效</span><br><span class="line">MySQL&gt; <span class="keyword">load</span> mysql servers <span class="keyword">to</span> runtime;</span><br><span class="line">MySQL&gt; save mysql servers <span class="keyword">to</span> disk;</span><br><span class="line">MySQL [(<span class="keyword">none</span>)]&gt; <span class="keyword">select</span> * <span class="keyword">from</span> mysql_servers;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/9a2f996fd479bbf444e5860769225b92.png" alt="img"></p>
+<h3 id="4-配置发送SQL语句的用户"><a href="#4-配置发送SQL语句的用户" class="headerlink" title="4.配置发送SQL语句的用户"></a>4.配置发送SQL语句的用户</h3><p>在master节点上创建访问用户</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; <span class="keyword">grant</span> <span class="keyword">all</span> <span class="keyword">on</span> *.* <span class="keyword">to</span> sqluser@<span class="string">'192.168.64.%'</span> identified <span class="keyword">by</span> <span class="string">'fscx'</span>;</span><br></pre></td></tr></table></figure>
+
+<p>在ProxySQL配置，将用户sqluser添加到mysql_users表中， default_hostgroup默认<br>组设置为写组10，当读写分离的路由规则不符合时，会访问默认组的数据库</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">MySQL&gt; insert into mysql_users(username,password,default_hostgroup)values(<span class="string">'sqluser'</span>,<span class="string">'fscx'</span>,10);</span><br><span class="line">MySQL&gt; load mysql<span class="built_in"> users </span><span class="keyword">to</span> runtime;</span><br><span class="line">MySQL&gt; save mysql<span class="built_in"> users </span><span class="keyword">to</span> disk;</span><br></pre></td></tr></table></figure>
+
+<p>使用sqluser用户测试是否能路由到默认的10写组实现读、写数据<br>““<br>mysql -usqluser -pfscx -P6033 -h127.0.0.1 -e ‘select @@server_id’<br>mysql -usqluser -pfscx -P6033 -h127.0.0.1 -e ‘create database testdb’<br>mysql -usqluser -pfscx testdb -P6033 -h127.0.0.1 -e ‘create table t(id int)</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">![](https:<span class="comment">//s1.51cto.com/images/blog/201905/08/fecfdc4024c5497b0959b7f6a76232b4.png?x-oss-process=image/watermark,size_16,text_QDUxQ1RP5Y2a5a6i,color_FFFFFF,t_100,g_se,x_10,y_10,shadow_90,type_ZmFuZ3poZW5naGVpdGk=)</span></span><br><span class="line">### <span class="number">5.</span>在proxysql上配置路由规则，实现读写分离</span><br><span class="line">&gt;与规则有关的表：mysql_query_rules和mysql_query_rules_fast_routing，后者是前者的扩展表，<span class="number">1.4</span><span class="number">.7</span>之后支持</span><br><span class="line">插入路由规则：将select语句分离到<span class="number">20</span>的读组，select语句中有一个特殊语句</span><br><span class="line">SELECT...FOR UPDATE它会申请写锁，应路由到<span class="number">10</span>的写组</span><br></pre></td></tr></table></figure>
+
+<p>MySQL&gt; insert into mysql_query_rules<br>(rule_id,active,match_digest,destination_hostgroup,apply)VALUES<br>(1,1,’^SELECT.*FOR UPDATE$’,10,1),(2,1,’^SELECT’,20,1);<br>MySQL&gt; load mysql query rules to runtime;<br>MySQL&gt; load mysql query rules to runtime;<br>““<br>注意：因ProxySQL根据rule_id顺序进行规则匹配，select … for update规则的<br>rule_id必须要小于普通的select规则的rule_id</p>
+<h3 id="6-客户端测试"><a href="#6-客户端测试" class="headerlink" title="6.客户端测试"></a>6.客户端测试</h3><ul>
+<li>测试读操作是否路由给20的读组<br><img src="/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/fbc2d55726d618c2f729ba16c60527be.png" alt="img"></li>
+<li>测试写操作，以事务方式进行测试</li>
+</ul>
+<p><img src="/2020/03/10/Mysql/Mysql%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%BA%94%E7%94%A8%E4%B9%8B%E4%BD%BF%E7%94%A8ProxySQL%E8%BF%9B%E8%A1%8C%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/a98d0b110e39f739d50faafb8944f747.png" alt="img"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/mysql/" <i class="fa fa-tag"></i>mysql</a>
+              <a href="/tags/proxySQL/" <i class="fa fa-tag"></i>proxySQL</a>
+              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/" <i class="fa fa-tag"></i>读写分离</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/10/Mysql/%E6%9E%84%E5%BB%BAMHA%E5%AE%9E%E7%8E%B0MySQL%E9%AB%98%E5%8F%AF%E7%94%A8%E9%9B%86%E7%BE%A4%E6%9E%B6%E6%9E%84%E9%85%8D%E7%BD%AE%E8%BF%87%E7%A8%8B%E6%80%BB%E7%BB%93/" rel="prev" title="构建MHA实现MySQL高可用集群架构配置过程总结">
+      <i class="fa fa-chevron-left"></i> 构建MHA实现MySQL高可用集群架构配置过程总结
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/10/Mysql/percona-xtrabackup%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AE%8C%E5%85%A8%EF%BC%8C%E5%A2%9E%E9%87%8F%E7%9A%84%E5%A4%87%E4%BB%BD%E5%92%8C%E8%BF%98%E5%8E%9F/" rel="next" title="percona-xtrabackup实现数据库完全，增量的备份和还原">
+      percona-xtrabackup实现数据库完全，增量的备份和还原 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#各大网站自己的读写分离中间件"><span class="nav-number">1.</span> <span class="nav-text">各大网站自己的读写分离中间件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#这里使用ProxySQL"><span class="nav-number">2.</span> <span class="nav-text">这里使用ProxySQL</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#架构图"><span class="nav-number"></span> <span class="nav-text">架构图</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#环境准备"><span class="nav-number"></span> <span class="nav-text">环境准备</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-实现142，143主从复制"><span class="nav-number">1.</span> <span class="nav-text">1.实现142，143主从复制</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-配置ProxySQL"><span class="nav-number"></span> <span class="nav-text">2.配置ProxySQL</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-ProxySQL安装（需yum源）"><span class="nav-number">1.</span> <span class="nav-text">1.ProxySQL安装（需yum源）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-配置ProxySQL-1"><span class="nav-number">2.</span> <span class="nav-text">2.配置ProxySQL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-设置分组"><span class="nav-number">3.</span> <span class="nav-text">3.设置分组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4-配置发送SQL语句的用户"><span class="nav-number">4.</span> <span class="nav-text">4.配置发送SQL语句的用户</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6-客户端测试"><span class="nav-number">5.</span> <span class="nav-text">6.客户端测试</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

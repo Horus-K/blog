@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Pod 概念 Pod是kubernetes集群中最小的部署和管理的基本单元，协同寻址，协同调度。 Pod是一个或多个容器的集合，是一个或一组服务（进程）的抽象集合。 Pod中可以共享网络和存储（可以简单理解为一个逻辑上的虚拟机，但并不是虚拟机）。 Pod被创建后用一个UID来唯一标识，当Pod生命周期结束，被一个等价Pod替代，UID将重新生成。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="k8s-Pod故障归类与排查方法">
+<meta property="og:url" content="http://yoursite.com/2020/03/08/k8s/k8s-Pod%E6%95%85%E9%9A%9C%E5%BD%92%E7%B1%BB%E4%B8%8E%E6%8E%92%E6%9F%A5%E6%96%B9%E6%B3%95/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="Pod 概念 Pod是kubernetes集群中最小的部署和管理的基本单元，协同寻址，协同调度。 Pod是一个或多个容器的集合，是一个或一组服务（进程）的抽象集合。 Pod中可以共享网络和存储（可以简单理解为一个逻辑上的虚拟机，但并不是虚拟机）。 Pod被创建后用一个UID来唯一标识，当Pod生命周期结束，被一个等价Pod替代，UID将重新生成。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-03-08T08:00:49.000Z">
+<meta property="article:modified_time" content="2020-03-10T11:14:47.208Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="k8s">
+<meta property="article:tag" content="排错">
+<meta property="article:tag" content="pod">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/08/k8s/k8s-Pod%E6%95%85%E9%9A%9C%E5%BD%92%E7%B1%BB%E4%B8%8E%E6%8E%92%E6%9F%A5%E6%96%B9%E6%B3%95/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>k8s-Pod故障归类与排查方法 | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/08/k8s/k8s-Pod%E6%95%85%E9%9A%9C%E5%BD%92%E7%B1%BB%E4%B8%8E%E6%8E%92%E6%9F%A5%E6%96%B9%E6%B3%95/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          k8s-Pod故障归类与排查方法
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-08 16:00:49" itemprop="dateCreated datePublished" datetime="2020-03-08T16:00:49+08:00">2020-03-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 19:14:47" itemprop="dateModified" datetime="2020-03-10T19:14:47+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/k8s/" itemprop="url" rel="index">
+                    <span itemprop="name">k8s</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Pod-概念"><a href="#Pod-概念" class="headerlink" title="Pod 概念"></a>Pod 概念</h2><ul>
+<li>Pod是kubernetes集群中最小的部署和管理的基本单元，协同寻址，协同调度。</li>
+<li>Pod是一个或多个容器的集合，是一个或一组服务（进程）的抽象集合。</li>
+<li>Pod中可以共享网络和存储（可以简单理解为一个逻辑上的虚拟机，但并不是虚拟机）。</li>
+<li>Pod被创建后用一个UID来唯一标识，当Pod生命周期结束，被一个等价Pod替代，UID将重新生成。</li>
+</ul>
+<a id="more"></a>
+
+<p><code>Docker</code> 是 <code>Kubernetes Pod</code> 中最常用的容器运行时，但 <code>Pod</code> 也能支持其他的容器运行，比如 rkt、podman等。</p>
+<p>Kubernetes 集群中的 Pod 可被用于以下两个主要用途：</p>
+<ul>
+<li><code>运行单个容器的 Pod</code>。“每个 Pod 一个容器”模型是最常见的 Kubernetes 用例；在这种情况下，可以将 Pod 看作单个容器的包装器，并且 Kubernetes 直接管理 Pod，而不是容器。</li>
+<li><code>运行多个协同工作的容器的 Pod</code>。Pod 可能封装由多个紧密耦合且需要共享资源的共处容器组成的应用程序。这些位于同一位置的容器可能形成单个内聚的服务单元，一个容器将文件从共享卷提供给公众，而另一个单独的“挂斗”容器则刷新或更新这些文件。Pod 将这些容器和存储资源打包为一个可管理的实体。</li>
+</ul>
+<h2 id="Pod-控制器"><a href="#Pod-控制器" class="headerlink" title="Pod 控制器"></a>Pod 控制器</h2><p>控制器可以为您创建和管理多个 Pod，管理副本和上线，并在集群范围内提供自修复能力。例如，如果一个节点失败，控制器可以在不同的节点上调度一样的替身来自动替换 Pod。</p>
+<p>包含一个或多个 Pod 的控制器一些示例包括：</p>
+<ul>
+<li><code>Deployment</code> kubernetes中最常用的控制器，用于运行无状态应用</li>
+<li><code>StatefulSet</code> 用于运行有状态应用</li>
+<li><code>DaemonSet</code> 作用就像是计算机中的守护进程，它能够运行集群存储、日志收集和监控等『守护进程』</li>
+</ul>
+<p>控制器通常使用您提供的 Pod 模板来创建它所负责的 Pod。</p>
+<h2 id="Pod-故障归类"><a href="#Pod-故障归类" class="headerlink" title="Pod 故障归类"></a>Pod 故障归类</h2><ul>
+<li>Pod状态 一直处于 Pending</li>
+<li>Pod状态 一直处于 Waiting</li>
+<li>Pod状态 一直处于 ContainerCreating</li>
+<li>Pod状态 处于 ImagePullBackOff</li>
+<li>Pod状态 处于 CrashLoopBackOff</li>
+<li>Pod状态 处于 Error</li>
+<li>Pod状态 一直处于 Terminating</li>
+<li>Pod状态 处于 Unknown</li>
+</ul>
+<p>上面是个人总结，如果不全请见谅！</p>
+<h2 id="Pod-排查故障命令"><a href="#Pod-排查故障命令" class="headerlink" title="Pod 排查故障命令"></a>Pod 排查故障命令</h2><ul>
+<li><code>kubectl get pod &lt;pod-name&gt; -o yaml</code> # 查看 Pod 配置是否正确</li>
+<li><code>kubectl describe pod &lt;pod-name&gt;</code> # 查看 Pod 详细事件信息</li>
+<li><code>kubectl logs &lt;pod-name&gt; [-c &lt;container-name&gt;]</code> # 查看容器日志</li>
+</ul>
+<h2 id="Pod-故障问题与排查方法"><a href="#Pod-故障问题与排查方法" class="headerlink" title="Pod 故障问题与排查方法"></a>Pod 故障问题与排查方法</h2><ul>
+<li><p>Pod 一直处于 <code>Pending</code> 状态</p>
+<p>Pending状态，这个状态意味着，Pod 的 YAML 文件已经提交给 Kubernetes，API 对象已经被创建并保存在 Etcd 当中。但是，这个 Pod 里有些容器因为某种原因而不能被顺利创建。比如，调度不成功（可以通过 <code>kubectl describe pod</code> 命令查看到当前 Pod 的事件，进而判断为什么没有调度）。可能原因：资源不足（集群内所有的 Node 都不满足该 Pod 请求的 CPU、内存、GPU 等资源）；HostPort 已被占用（通常推荐使用 Service 对外开放服务端口）。</p>
+</li>
+<li><p>Pod 一直处于 <code>Waiting</code> 或 <code>ContainerCreating</code> 状态</p>
+<p>首先还是通过 <code>kubectl describe pod</code> 命令查看到当前 <code>Pod</code> 的事件。可能的原因包括：</p>
+<p>1、<code>镜像拉取失败</code>，比如，镜像地址配置错误、拉取不了国外镜像源（gcr.io）、私有镜像密钥配置错误、镜像太大导致拉取超时（可以适当调整 kubelet 的 –image-pull-progress-deadline 和 –runtime-request-timeout 选项）等。</p>
+<p>2、CNI 网络错误，一般需要检查 CNI 网络插件的配置，比如：无法配置 Pod 网络、无法分配 IP 地址。</p>
+<p>3、容器无法启动，需要检查是否打包了正确的镜像或者是否配置了正确的容器参数。</p>
+<p>4、Failed create pod sandbox，查看kubelet日志，原因可能是磁盘坏道（input/output error）。</p>
+</li>
+<li><p>Pod 一直处于 <code>ImagePullBackOff</code> 状态</p>
+<p>通常是<code>镜像名称配置错误</code>或者<code>私有镜像的密钥配置错误导致</code>。这种情况可以使用 <code>docker pull</code> 来验证镜像是否可以正常拉取。</p>
+<p>如果私有镜像密钥配置错误或者没有配置，按下面检查：</p>
+<p>1、查询 docker-registry 类型的 Secret</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 查看 docker-registry Secret </span></span><br><span class="line">$ kubectl  get secrets <span class="keyword">my</span>-secret -o yaml | <span class="keyword">grep</span> <span class="string">'dockerconfigjson:'</span> | awk <span class="string">'&#123;print $NF&#125;'</span> | base64 -d</span><br></pre></td></tr></table></figure>
+
+<p>2、创建 docker-registry 类型的 Secret</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 首先创建一个 docker-registry 类型的 Secret</span></span><br><span class="line">$ kubectl create<span class="built_in"> secret </span>docker-registry my-secret <span class="attribute">--docker-server</span>=DOCKER_REGISTRY_SERVER <span class="attribute">--docker-username</span>=DOCKER_USER <span class="attribute">--docker-password</span>=DOCKER_PASSWORD <span class="attribute">--docker-email</span>=DOCKER_EMAIL</span><br><span class="line"></span><br><span class="line"><span class="comment"># 然后在 Deployment 中引用这个 Secret</span></span><br><span class="line">spec:</span><br><span class="line">  containers:</span><br><span class="line">  - name: private-reg-container</span><br><span class="line">    image: &lt;your-private-image&gt;</span><br><span class="line">  imagePullSecrets:</span><br><span class="line">  - name: my-secret</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Pod 一直处于 <code>CrashLoopBackOff</code> 状态</p>
+<p><code>CrashLoopBackOff</code> 状态说明容器曾经启动了，但又异常退出。此时可以先查看一下容器的日志。</p>
+<p>通过命令 <code>kubectl logs</code> 和 <code>kubectl logs --previous</code> 可以发现一些容器退出的原因，比如：容器进程退出、健康检查失败退出、此时如果还未发现线索，还可以到容器内执行命令来进一步查看退出原因（kubectl exec cassandra – cat /var/log/cassandra/system.log），如果还是没有线索，那就需要 SSH 登录该 Pod 所在的 Node 上，查看 <code>Kubelet</code> 或者 <code>Docker</code> 的日志进一步排查。</p>
+</li>
+<li><p>Pod 处于 <code>Error</code> 状态</p>
+<p>通常处于 Error 状态说明 Pod 启动过程中发生了错误。常见的原因包括：依赖的 <code>ConfigMap</code>、<code>Secret</code> 或者 <code>PV</code> 等不存在；请求的资源超过了管理员设置的限制，比如超过了 <code>LimitRange</code> 等；违反集群的安全策略，比如违反了 <code>PodSecurityPolicy</code> 等；容器无权操作集群内的资源，比如开启 <code>RBAC</code> 后，需要为 <code>ServiceAccount</code> 配置角色绑定;</p>
+</li>
+<li><p>Pod 处于 Terminating 或 Unknown 状态</p>
+<p>从 v1.5 开始，Kubernetes 不会因为 Node 失联而删除其上正在运行的 Pod，而是将其标记为 <code>Terminating</code> 或 <code>Unknown</code> 状态。想要删除这些状态的 Pod 有三种方法：</p>
+<p>1、从集群中删除该 Node。使用公有云时，kube-controller-manager 会在 VM 删除后自动删除对应的 Node。而在物理机部署的集群中，需要管理员手动删除 Node（如 kubectl delete node ）。</p>
+<p>2、Node 恢复正常。Kubelet 会重新跟 kube-apiserver 通信确认这些 Pod 的期待状态，进而再决定删除或者继续运行这些 Pod。用户强制删除。用户可以执行 <code>kubectl delete pods --grace-period=0 --force</code>强制删除 Pod。除非明确知道 Pod 的确处于停止状态（比如 Node 所在 VM 或物理机已经关机），否则不建议使用该方法。特别是 <code>StatefulSet</code> 管理的 Pod，强制删除容易导致脑裂或者数据丢失等问题。</p>
+<p>3、Pod 行为异常，这里所说的行为异常是指 Pod 没有按预期的行为执行，比如没有运行 <code>podSpec</code> 里面设置的命令行参数。这一般是 podSpec yaml 文件内容有误，可以尝试使用 <code>--validate</code> 参数重建容器，比如:</p>
+<p><code>kubectl delete pod mypod</code> 和 <code>kubectl create --validate -f mypod.yaml</code>，也可以查看创建后的 podSpec 是否是对的，比如：<code>kubectl get pod mypod -o yaml</code>，修改静态 Pod 的 <code>Manifest</code> 后未自动重建，Kubelet 使用 inotify 机制检测 /etc/kubernetes/manifests 目录（可通过 Kubelet 的 –pod-manifest-path 选项指定）中静态 Pod 的变化，并在文件发生变化后重新创建相应的 Pod。但有时也会发生修改静态 Pod 的 Manifest 后未自动创建新 Pod 的情景，此时一个简单的修复方法是重启 Kubelet。</p>
+<p><code>Unknown</code> 这是一个异常状态，意味着 Pod 的状态不能持续地被 kubelet 汇报给 kube-apiserver，这很有可能是主从节点（Master 和 Kubelet）间的通信出现了问题。</p>
+</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/k8s/" <i class="fa fa-tag"></i>k8s</a>
+              <a href="/tags/%E6%8E%92%E9%94%99/" <i class="fa fa-tag"></i>排错</a>
+              <a href="/tags/pod/" <i class="fa fa-tag"></i>pod</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/08/k8s/k8s-Pod%E9%87%8D%E5%90%AF%E6%96%B9%E6%B3%95/" rel="prev" title="k8s-Pod重启方法">
+      <i class="fa fa-chevron-left"></i> k8s-Pod重启方法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/08/k8s/k8s-ClusterRole/" rel="next" title="k8s-ClusterRole">
+      k8s-ClusterRole <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Pod-概念"><span class="nav-number">1.</span> <span class="nav-text">Pod 概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pod-控制器"><span class="nav-number">2.</span> <span class="nav-text">Pod 控制器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pod-故障归类"><span class="nav-number">3.</span> <span class="nav-text">Pod 故障归类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pod-排查故障命令"><span class="nav-number">4.</span> <span class="nav-text">Pod 排查故障命令</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Pod-故障问题与排查方法"><span class="nav-number">5.</span> <span class="nav-text">Pod 故障问题与排查方法</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

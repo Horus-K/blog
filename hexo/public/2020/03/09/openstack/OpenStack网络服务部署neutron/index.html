@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css">
+  <script src="/lib/pace/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Mist","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="neutron是openstack的网络组件，是OpenStack的网络服务">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenStack网络服务部署neutron">
+<meta property="og:url" content="http://yoursite.com/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/index.html">
+<meta property="og:site_name" content="Q&#39;s blog">
+<meta property="og:description" content="neutron是openstack的网络组件，是OpenStack的网络服务">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/neutron1.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/neutron3.png">
+<meta property="og:image" content="http://yoursite.com/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/neutron4.png">
+<meta property="article:published_time" content="2020-03-09T07:55:22.000Z">
+<meta property="article:modified_time" content="2020-03-10T10:56:22.427Z">
+<meta property="article:author" content="屈辉">
+<meta property="article:tag" content="openstack">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/neutron1.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>OpenStack网络服务部署neutron | Q's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Q's blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">一些个人文档笔记</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签<span class="badge">59</span></a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类<span class="badge">20</span></a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档<span class="badge">115</span></a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+  <a href="https://github.com/Horus-K" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="屈辉">
+      <meta itemprop="description" content="开心就好">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Q's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OpenStack网络服务部署neutron
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-09 15:55:22" itemprop="dateCreated datePublished" datetime="2020-03-09T15:55:22+08:00">2020-03-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-03-10 18:56:22" itemprop="dateModified" datetime="2020-03-10T18:56:22+08:00">2020-03-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/openstack/" itemprop="url" rel="index">
+                    <span itemprop="name">openstack</span>
+                  </a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>neutron是openstack的网络组件，是OpenStack的网络服务</p>
+<a id="more"></a>
+
+<p>网络类型：</p>
+<p>提供者网络：虚拟机桥接到物理机，并且虚拟机必须和物理机在同一个网络范围内。</p>
+<p>自服务网络：可以自己创建网络，最终会通过虚拟路由器连接外网</p>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br></pre></td><td class="code"><pre><span class="line">1、创建数据库并授权</span><br><span class="line">MariaDB [(none)]&gt; CREATE DATABASE neutron;</span><br><span class="line"></span><br><span class="line">MariaDB [(none)]&gt; GRANT ALL PRIVILEGES ON neutron.<span class="symbol">*</span> TO 'neutron'<span class="meta">@'%'</span> IDENTIFIED BY 'neutron123';</span><br><span class="line">2、测试连接数据库</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># mysql -uneutron -pneutron123 -h10.20.0.100</span></span><br><span class="line">Welcome to the MariaDB monitor. Commands end with ; or \g.</span><br><span class="line">Your MariaDB connection id is 3088</span><br><span class="line">Server version: 10.1.20-MariaDB MariaDB Server</span><br><span class="line"></span><br><span class="line">Copyright (c) 2000, 2016, Oracle, MariaDB Corporation Ab and others.</span><br><span class="line"></span><br><span class="line">Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.</span><br><span class="line"></span><br><span class="line">MariaDB [(none)]&gt; show databases;</span><br><span class="line">+--------------------+</span><br><span class="line">|<span class="string"> Database           </span>|</span><br><span class="line">+--------------------+</span><br><span class="line">|<span class="string"> information_schema </span>|</span><br><span class="line">|<span class="string"> neutron            </span>|</span><br><span class="line">|<span class="string"> test               </span>|</span><br><span class="line">+--------------------+</span><br><span class="line">3 rows in set (0.02 sec)</span><br><span class="line">3、创建neutron用户</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># openstack user create --domain default --password-prompt neutron</span></span><br><span class="line">User Password:</span><br><span class="line">Repeat User Password:</span><br><span class="line">+---------------------+----------------------------------+</span><br><span class="line">|<span class="string"> Field               </span>|<span class="string"> Value                            </span>|</span><br><span class="line">+---------------------+----------------------------------+</span><br><span class="line">|<span class="string"> domain_id           </span>|<span class="string"> e07d0a220bf64db69c68fb128486472a </span>|</span><br><span class="line">|<span class="string"> enabled             </span>|<span class="string"> True                             </span>|</span><br><span class="line">|<span class="string"> id                  </span>|<span class="string"> 9a35bc9f0add4decbed162b3314d0146 </span>|</span><br><span class="line">|<span class="string"> name                </span>|<span class="string"> neutron                          </span>|</span><br><span class="line">|<span class="string"> options             </span>|<span class="string"> &#123;&#125;                               </span>|</span><br><span class="line">|<span class="string"> password_expires_at </span>|<span class="string"> None                             </span>|</span><br><span class="line">+---------------------+----------------------------------+</span><br><span class="line"></span><br><span class="line">4、将neutron用户加入service项目，并赋予admin角色的权限</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># openstack role add --project service --user neutron admin</span></span><br><span class="line"></span><br><span class="line">5、创建neutron服务实体</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># openstack service create --name neutron \</span></span><br><span class="line">--description <span class="string">"OpenStack Networking"</span> network</span><br><span class="line">+-------------+----------------------------------+</span><br><span class="line">|<span class="string"> Field       </span>|<span class="string"> Value                            </span>|</span><br><span class="line">+-------------+----------------------------------+</span><br><span class="line">|<span class="string"> description </span>|<span class="string"> OpenStack Networking             </span>|</span><br><span class="line">|<span class="string"> enabled     </span>|<span class="string"> True                             </span>|</span><br><span class="line">|<span class="string"> id          </span>|<span class="string"> 5528cd69d011463ea81281fe0182a654 </span>|</span><br><span class="line">|<span class="string"> name        </span>|<span class="string"> neutron                          </span>|</span><br><span class="line">|<span class="string"> type        </span>|<span class="string"> network                          </span>|</span><br><span class="line">+-------------+----------------------------------+</span><br><span class="line"></span><br><span class="line">6、注册neutron服务API端点</span><br><span class="line">openstack endpoint create --region RegionOne network public http://openstack-vip.qh.com:9696 </span><br><span class="line">openstack endpoint create --region RegionOne network internal http://openstack-vip.qh.com:9696 </span><br><span class="line">openstack endpoint create --region RegionOne network admin http://openstack-vip.qh.com:9696 </span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># openstack endpoint create --region RegionOne network public http://openstack-vip.qh.com:9696</span></span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">|<span class="string"> Field        </span>|<span class="string"> Value                            </span>|</span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">|<span class="string"> enabled      </span>|<span class="string"> True                             </span>|</span><br><span class="line">|<span class="string"> id           </span>|<span class="string"> a930b5f0ee0e44439e211afe67a7a3a2 </span>|</span><br><span class="line">|<span class="string"> interface    </span>|<span class="string"> public                           </span>|</span><br><span class="line">|<span class="string"> region       </span>|<span class="string"> RegionOne                        </span>|</span><br><span class="line">|<span class="string"> region_id    </span>|<span class="string"> RegionOne                        </span>|</span><br><span class="line">|<span class="string"> service_id   </span>|<span class="string"> 5528cd69d011463ea81281fe0182a654 </span>|</span><br><span class="line">|<span class="string"> service_name </span>|<span class="string"> neutron                          </span>|</span><br><span class="line">|<span class="string"> service_type </span>|<span class="string"> network                          </span>|</span><br><span class="line">|<span class="string"> url          </span>|<span class="string"> http://openstack-vip.net:9696    </span>|</span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># openstack endpoint create --region RegionOne network internal http://openstack-vip.qh.com:9696</span></span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">|<span class="string"> Field        </span>|<span class="string"> Value                            </span>|</span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">|<span class="string"> enabled      </span>|<span class="string"> True                             </span>|</span><br><span class="line">|<span class="string"> id           </span>|<span class="string"> 37c14697e2da46a5960defff9ccdd729 </span>|</span><br><span class="line">|<span class="string"> interface    </span>|<span class="string"> internal                         </span>|</span><br><span class="line">|<span class="string"> region       </span>|<span class="string"> RegionOne                        </span>|</span><br><span class="line">|<span class="string"> region_id    </span>|<span class="string"> RegionOne                        </span>|</span><br><span class="line">|<span class="string"> service_id   </span>|<span class="string"> 5528cd69d011463ea81281fe0182a654 </span>|</span><br><span class="line">|<span class="string"> service_name </span>|<span class="string"> neutron                          </span>|</span><br><span class="line">|<span class="string"> service_type </span>|<span class="string"> network                          </span>|</span><br><span class="line">|<span class="string"> url          </span>|<span class="string"> http://openstack-vip.net:9696    </span>|</span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># openstack endpoint create --region RegionOne network admin http://openstack-vip.qh.com:9696</span></span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">|<span class="string"> Field        </span>|<span class="string"> Value                            </span>|</span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line">|<span class="string"> enabled      </span>|<span class="string"> True                             </span>|</span><br><span class="line">|<span class="string"> id           </span>|<span class="string"> 04b9771687924f25b0f8b8dc89d3232e </span>|</span><br><span class="line">|<span class="string"> interface    </span>|<span class="string"> admin                            </span>|</span><br><span class="line">|<span class="string"> region       </span>|<span class="string"> RegionOne                        </span>|</span><br><span class="line">|<span class="string"> region_id    </span>|<span class="string"> RegionOne                        </span>|</span><br><span class="line">|<span class="string"> service_id   </span>|<span class="string"> 5528cd69d011463ea81281fe0182a654 </span>|</span><br><span class="line">|<span class="string"> service_name </span>|<span class="string"> neutron                          </span>|</span><br><span class="line">|<span class="string"> service_type </span>|<span class="string"> network                          </span>|</span><br><span class="line">|<span class="string"> url          </span>|<span class="string"> http://openstack-vip.net:9696    </span>|</span><br><span class="line">+--------------+----------------------------------+</span><br><span class="line"></span><br><span class="line">7、在控制端安装提供者网络的组件</span><br><span class="line"><span class="comment">###安装阿里源</span></span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># yum install openstack-neutron openstack-neutron-ml2 \</span></span><br><span class="line">openstack-neutron-linuxbridge ebtables</span><br><span class="line"></span><br><span class="line">8、编辑neutron.conf配置文件</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># vim /etc/neutron/neutron.conf</span></span><br><span class="line">[DEFAULT]</span><br><span class="line">core_plugin = ml2                  <span class="comment">#启用ml2插件</span></span><br><span class="line">service_plugins =                  <span class="comment">#禁用其他插件</span></span><br><span class="line">transport_url = rabbit://openstack:openstack123<span class="meta">@rabbitmq.qh.com</span>      <span class="comment">#消息队列</span></span><br><span class="line">auth_strategy = keystone</span><br><span class="line">notify_nova_on_port_status_changes = true</span><br><span class="line">notify_nova_on_port_data_changes = true</span><br><span class="line"></span><br><span class="line">[database]                        <span class="comment">#配置数据库访问</span></span><br><span class="line">connection = mysql+pymysql://neutron:neutron123<span class="meta">@openstack-vip.qh.com/neutron</span></span><br><span class="line"></span><br><span class="line">[keystone_authtoken]              <span class="comment">#认证服务</span></span><br><span class="line">auth_uri = http://openstack-vip.qh.com:5000</span><br><span class="line">auth_url = http://openstack-vip.qh.com:35357</span><br><span class="line">memcached_servers = openstack-vip.qh.com:11211</span><br><span class="line">auth_type = password</span><br><span class="line">project_domain_name = default</span><br><span class="line">user_domain_name = default</span><br><span class="line">project_name = service</span><br><span class="line">username = neutron</span><br><span class="line">password = neutron</span><br><span class="line"></span><br><span class="line">[nova]                   <span class="comment">#配置网络服务来通知计算节点的网络拓扑变化</span></span><br><span class="line">auth_url = http://openstack-vip.qh.com:35357</span><br><span class="line">auth_type = password</span><br><span class="line">project_domain_name = default</span><br><span class="line">user_domain_name = default</span><br><span class="line">region_name = RegionOne</span><br><span class="line">project_name = service</span><br><span class="line">username = nova</span><br><span class="line">password = nova</span><br><span class="line"></span><br><span class="line">[oslo_concurrency]              <span class="comment">#配置锁路径</span></span><br><span class="line">lock_path = /var/lib/neutron/tmp</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">9、配置桥接配置</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># vim /etc/neutron/plugins/ml2/ml2_conf.ini</span></span><br><span class="line">[ml2]</span><br><span class="line">type_drivers = flat,vlan             <span class="comment">#启用flat和vlan</span></span><br><span class="line">tenant_network_types =               <span class="comment">#禁用私有网络</span></span><br><span class="line">mechanism_drivers = linuxbridge      <span class="comment">#启用linuxbridge机制</span></span><br><span class="line">extension_drivers = port_security    <span class="comment">#启用端口安全</span></span><br><span class="line"></span><br><span class="line">[ml2_type_flat]                      <span class="comment">#配置共有虚拟网络为flat</span></span><br><span class="line">flat_networks = linux36          <span class="comment">#名称，可以更改不加网卡名</span></span><br><span class="line"></span><br><span class="line">[securitygroup]                      <span class="comment">#启用ipset增加安全组的方便性</span></span><br><span class="line">enable_security_group = true</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">10、配置DHCP代理</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># vim /etc/neutron/dhcp_agent.ini</span></span><br><span class="line">[DEFAULT]</span><br><span class="line">interface_driver = linuxbridge</span><br><span class="line">dhcp_driver = neutron.agent.linux.dhcp.Dnsmasq</span><br><span class="line">enable_isolated_metadata = true</span><br><span class="line"></span><br><span class="line">11、配置元数据代理</span><br><span class="line">添加控制端的IP或域名，密码一般填写年月日</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># vim /etc/neutron/metadata_agent.ini</span></span><br><span class="line">[DEFAULT]                             </span><br><span class="line">nova_metadata_ip = openstack-vip.qh.com</span><br><span class="line">metadata_proxy_shared_secret = 20190621</span><br><span class="line"></span><br><span class="line">12、在nova配置文件中配置认证账号密码，告诉nova如何找neutron做认证</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># vim /etc/nova/nova.conf </span></span><br><span class="line">[neutron]                        <span class="comment">#配置访问参数，启用元数据代理，并设置密码</span></span><br><span class="line">url = http://openstack-vip.qh.com:9696</span><br><span class="line">auth_url = http://openstack-vip.qh.com:35357</span><br><span class="line">auth_type = password</span><br><span class="line">project_domain_name = default</span><br><span class="line">user_domain_name = default</span><br><span class="line">region_name = RegionOne</span><br><span class="line">project_name = service</span><br><span class="line">username = neutron</span><br><span class="line">password = neutron</span><br><span class="line">service_metadata_proxy = true</span><br><span class="line">metadata_proxy_shared_secret = 20190621    <span class="comment">#密码是上一步的元数据代理设置的密码</span></span><br><span class="line"></span><br><span class="line">13、创建一个软连接</span><br><span class="line">网络服务初始化脚本需要一个软链接，创建出软连接</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># ln -s /etc/neutron/plugins/ml2/ml2_conf.ini /etc/neutron/plugin.ini</span></span><br><span class="line"></span><br><span class="line">14、定义映射关系</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># vim /etc/neutron/plugins/ml2/linuxbridge_agent.ini</span></span><br><span class="line">[linux_bridge]                 <span class="comment">#将公共虚拟网络和公共物理网络接口对应起来</span></span><br><span class="line">physical_interface_mappings = mylinux:br0      <span class="comment">#第9步配置的名称</span></span><br><span class="line"> 与/etc/neutron/plugins/ml2/ml2_conf.ini 中网卡名一样</span><br><span class="line">[vxlan]                        <span class="comment">#禁用vxlan</span></span><br><span class="line">enable_vxlan = false</span><br><span class="line"></span><br><span class="line">[securitygroup]                <span class="comment">#启用安全组并配置linux桥接iptables防火墙</span></span><br><span class="line">enable_security_group = true</span><br><span class="line">firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver</span><br><span class="line">15、初始化数据库</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf \</span></span><br><span class="line">--config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head<span class="string">" neutron</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/neutron1.png" alt="img"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">查看数据库生成的数据</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/neutron3.png" alt="img"></p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">16、重启计算<span class="selector-tag">API</span>服务</span><br><span class="line"><span class="selector-attr">[root@openstack ~]</span># <span class="selector-tag">systemctl</span> <span class="selector-tag">restart</span> <span class="selector-tag">openstack-nova-api</span><span class="selector-class">.service</span></span><br><span class="line"></span><br><span class="line">17、启动<span class="selector-tag">neutron</span>并设置为开机启动</span><br><span class="line"><span class="selector-attr">[root@openstack ~]</span># <span class="selector-tag">systemctl</span> <span class="selector-tag">enable</span> <span class="selector-tag">neutron-server</span><span class="selector-class">.service</span> \</span><br><span class="line"><span class="selector-tag">neutron-linuxbridge-agent</span><span class="selector-class">.service</span> <span class="selector-tag">neutron-dhcp-agent</span><span class="selector-class">.service</span> \</span><br><span class="line"><span class="selector-tag">neutron-metadata-agent</span><span class="selector-class">.service</span></span><br><span class="line"></span><br><span class="line"><span class="selector-attr">[root@openstack ~]</span># <span class="selector-tag">systemctl</span> <span class="selector-tag">start</span> <span class="selector-tag">neutron-server</span><span class="selector-class">.service</span> \</span><br><span class="line"><span class="selector-tag">neutron-linuxbridge-agent</span><span class="selector-class">.service</span> <span class="selector-tag">neutron-dhcp-agent</span><span class="selector-class">.service</span> \</span><br><span class="line"><span class="selector-tag">neutron-metadata-agent</span><span class="selector-class">.service</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/03/09/openstack/OpenStack%E7%BD%91%E7%BB%9C%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2neutron/neutron4.png" alt="img"></p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">18</span>、配置负载均衡</span><br><span class="line">listen openstack_neutron_port_9696</span><br><span class="line">  bind <span class="number">10.20</span><span class="number">.0</span><span class="number">.40</span>:<span class="number">9696</span></span><br><span class="line">  mode tcp</span><br><span class="line">  log global</span><br><span class="line">  server <span class="number">10.20</span><span class="number">.0</span><span class="number">.60</span> <span class="number">10.20</span><span class="number">.0</span><span class="number">.60</span>:<span class="number">9696</span> check <span class="built_in">int</span>er <span class="number">3000</span> fall <span class="number">2</span> rise <span class="number">5</span></span><br><span class="line">  server <span class="number">10.20</span><span class="number">.0</span><span class="number">.70</span> <span class="number">10.20</span><span class="number">.0</span><span class="number">.70</span>:<span class="number">9696</span> check <span class="built_in">int</span>er <span class="number">3000</span> fall <span class="number">2</span> rise <span class="number">5</span> backup</span><br></pre></td></tr></table></figure>
+
+<p><strong>===========================================================================</strong></p>
+<h2 id="配置计算节点"><a href="#配置计算节点" class="headerlink" title="配置计算节点"></a>配置计算节点</h2><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><span class="line">1、安装neutron组件</span><br><span class="line">[root<span class="meta">@note1</span> ~]<span class="comment"># yum install openstack-neutron-linuxbridge ebtables ipset</span></span><br><span class="line"></span><br><span class="line">2、修改配置文件</span><br><span class="line">[root<span class="meta">@note1</span> ~]<span class="comment"># vim /etc/neutron/neutron.conf</span></span><br><span class="line">[DEFAULT]</span><br><span class="line">transport_url = rabbit://openstack:openstack123<span class="meta">@rabbitmq.qh.com</span></span><br><span class="line">auth_strategy = keystone</span><br><span class="line"></span><br><span class="line">[keystone_authtoken]</span><br><span class="line">auth_uri = http://openstack-vip.qh.com:5000</span><br><span class="line">auth_url = http://openstack-vip.qh.com:35357</span><br><span class="line">memcached_servers = openstack-vip.qh.com:11211</span><br><span class="line">auth_type = password</span><br><span class="line">project_domain_name = default</span><br><span class="line">user_domain_name = default</span><br><span class="line">project_name = service</span><br><span class="line">username = neutron</span><br><span class="line">password = neutron</span><br><span class="line"></span><br><span class="line">[oslo_concurrency]</span><br><span class="line">lock_path = /var/lib/neutron/tmp</span><br><span class="line"></span><br><span class="line">3、提供者网络配置linuxbridge</span><br><span class="line">[root<span class="meta">@note1</span> ~]<span class="comment"># vim /etc/neutron/plugins/ml2/linuxbridge_agent.ini</span></span><br><span class="line">[linux_bridge]</span><br><span class="line">physical_interface_mappings = linux36:bond0    <span class="comment">#mylinux和控制端设置的保持一致</span></span><br><span class="line"></span><br><span class="line">[vxlan]</span><br><span class="line">enable_vxlan = false</span><br><span class="line"></span><br><span class="line">[securitygroup]</span><br><span class="line">enable_security_group = true</span><br><span class="line">firewall_driver = neutron.agent.linux.iptables_firewall.IptablesFirewallDriver</span><br><span class="line"></span><br><span class="line">4、配置nova</span><br><span class="line">[root<span class="meta">@note1</span> ~]<span class="comment"># vim /etc/nova/nova.conf </span></span><br><span class="line">[neutron]</span><br><span class="line">url = http://openstack-vip.qh.com:9696</span><br><span class="line">auth_url = http://openstack-vip.qh.com:35357</span><br><span class="line">auth_type = password</span><br><span class="line">project_domain_name = default</span><br><span class="line">user_domain_name = default</span><br><span class="line">region_name = RegionOne</span><br><span class="line">project_name = service</span><br><span class="line">username = neutron</span><br><span class="line">password = neutron</span><br><span class="line">service_metadata_proxy = true</span><br><span class="line">metadata_proxy_shared_secret = 20190621</span><br><span class="line"></span><br><span class="line">5、重启计算节点服务</span><br><span class="line">[root<span class="meta">@note1</span> ~]<span class="comment"># systemctl restart openstack-nova-compute.service</span></span><br><span class="line"></span><br><span class="line">6、启动Linuxbridge代理并配置它开机自启动</span><br><span class="line">[root<span class="meta">@Host1</span> ~]<span class="comment"># systemctl start neutron-linuxbridge-agent.service</span></span><br><span class="line">[root<span class="meta">@Host1</span> ~]<span class="comment"># systemctl enable neutron-linuxbridge-agent.service</span></span><br><span class="line"></span><br><span class="line">7、控制节点测试:确认alive为笑脸存活</span><br><span class="line">[root<span class="meta">@openstack</span> ~]<span class="comment"># neutron agent-list</span></span><br><span class="line">neutron CLI is deprecated and will be removed in the future. Use openstack CLI instead.</span><br><span class="line">+------------------+------------------+-----------+-------------------+-------+----------------+---------------------+</span><br><span class="line">|<span class="string"> id               </span>|<span class="string"> agent_type       </span>|<span class="string"> host      </span>|<span class="string"> availability_zone </span>|<span class="string"> alive </span>|<span class="string"> admin_state_up </span>|<span class="string"> binary              </span>|</span><br><span class="line">+------------------+------------------+-----------+-------------------+-------+----------------+---------------------+</span><br><span class="line">|<span class="string"> a0f301e2-2ed0-43 </span>|<span class="string"> DHCP agent       </span>|<span class="string"> openstack </span>|<span class="string"> nova              </span>|<span class="string"> :-)   </span>|<span class="string"> True           </span>|<span class="string"> neutron-dhcp-agent  </span>|</span><br><span class="line">|<span class="string"> 42-a005-f71b9d23 </span>|<span class="string">                  </span>|<span class="string">           </span>|<span class="string">                   </span>|<span class="string">       </span>|<span class="string">                </span>|<span class="string">                     </span>|</span><br><span class="line">|<span class="string"> e543             </span>|<span class="string">                  </span>|<span class="string">           </span>|<span class="string">                   </span>|<span class="string">       </span>|<span class="string">                </span>|<span class="string">                     </span>|</span><br><span class="line">|<span class="string"> dc88fa1e-f79e-   </span>|<span class="string"> Metadata agent   </span>|<span class="string"> openstack </span>|<span class="string">                   </span>|<span class="string"> :-)   </span>|<span class="string"> True           </span>|<span class="string"> neutron-metadata-   </span>|</span><br><span class="line">|<span class="string"> 4fb7-89ed-       </span>|<span class="string">                  </span>|<span class="string">           </span>|<span class="string">                   </span>|<span class="string">       </span>|<span class="string">                </span>|<span class="string"> agent               </span>|</span><br><span class="line">|<span class="string"> 0dc592fb3058     </span>|<span class="string">                  </span>|<span class="string">           </span>|<span class="string">                   </span>|<span class="string">       </span>|<span class="string">                </span>|<span class="string">                     </span>|</span><br><span class="line">|<span class="string"> f0416b07-78b5-4b </span>|<span class="string"> Linux bridge     </span>|<span class="string"> openstack </span>|<span class="string">                   </span>|<span class="string"> :-)   </span>|<span class="string"> True           </span>|<span class="string"> neutron-            </span>|</span><br><span class="line">|<span class="string"> 56-8ee1-1f5ab1ba </span>|<span class="string"> agent            </span>|<span class="string">           </span>|<span class="string">                   </span>|<span class="string">       </span>|<span class="string">                </span>|<span class="string"> linuxbridge-agent   </span>|</span><br><span class="line">|<span class="string"> caa8             </span>|<span class="string">                  </span>|<span class="string">           </span>|<span class="string">                   </span>|<span class="string">       </span>|<span class="string">                </span>|<span class="string">                     </span>|</span><br><span class="line">+------------------+------------------+-----------+-------------------+-------+----------------+---------------------+</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/openstack/" <i class="fa fa-tag"></i>openstack</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/09/openstack/OpenStack%E4%BB%AA%E8%A1%A8%E7%9B%98/" rel="prev" title="OpenStack仪表盘">
+      <i class="fa fa-chevron-left"></i> OpenStack仪表盘
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/09/openstack/OpenStack%E8%AE%A1%E7%AE%97%E6%9C%8D%E5%8A%A1%E9%83%A8%E7%BD%B2nova/" rel="next" title="OpenStack计算服务部署nova">
+      OpenStack计算服务部署nova <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#配置计算节点"><span class="nav-number">1.</span> <span class="nav-text">配置计算节点</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">屈辉</p>
+  <div class="site-description" itemprop="description">开心就好</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">115</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">59</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">屈辉</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a> v7.7.1
+  </div> -->
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  
+  <script color='3423,34,234' opacity='0.35' zIndex='-1' count='150' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+  <script defer src="/lib/three/three.min.js"></script>
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
